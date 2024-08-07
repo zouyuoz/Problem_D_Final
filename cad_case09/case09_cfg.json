@@ -1,0 +1,34 @@
+[
+  {
+    "block_name":"BLOCK_0",
+    "through_block_net_num":43520,
+    "through_block_edge_net_num":[],
+    "block_port_region":[],
+    "is_feedthroughable":"False",
+    "is_tile":"False"
+  },
+  {
+    "block_name":"BLOCK_1",
+    "through_block_net_num":2960,
+    "through_block_edge_net_num":[],
+    "block_port_region":[],
+    "is_feedthroughable":"False",
+    "is_tile":"False"
+  },
+  {
+    "block_name":"BLOCK_2",
+    "through_block_net_num":7960,
+    "through_block_edge_net_num":[],
+    "block_port_region":[],
+    "is_feedthroughable":"False",
+    "is_tile":"False"
+  },
+  {
+    "block_name":"BLOCK_3",
+    "through_block_net_num":9560,
+    "through_block_edge_net_num":[],
+    "block_port_region":[],
+    "is_feedthroughable":"False",
+    "is_tile":"False"
+  }
+]

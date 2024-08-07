@@ -1,0 +1,69 @@
+:root {
+    --clr-one: #00ffff;
+    --clr-bg: black;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--clr-bg);
+    font-family: "Courier New", Courier, monospace;
+    overflow: hidden;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.neon-button {
+    font-size: 50px;
+    display: inline-block;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 0.5em 1em;
+    margin: 2rem;
+    border-radius: 50px;
+    position: relative;
+    border: none;
+    color: var(--clr-one);
+    background: var(--clr-bg);
+    overflow: hidden;
+}
+
+.neon-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle 500px at var(--x, 50%) var(--y, 50%), 
+        var(--clr-one) 0%,
+        transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.neon-button:hover::before {
+    opacity: 0.5;
+}
+
+.neon-button:hover,
+.neon-button:focus {
+    color: var(--clr-one);
+}

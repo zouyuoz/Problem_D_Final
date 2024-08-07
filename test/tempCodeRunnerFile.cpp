@@ -1,0 +1,3 @@
+
+    Company company;
+    company.setAllOffices();

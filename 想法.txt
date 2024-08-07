@@ -1,0 +1,581 @@
+就是說阿，
+一開始起點先往四個方向發散，遇到牆壁之後停下來
+start point (x0, y0)
+	goNorth (x0, y = y_max(until hit obstacle))
+	goSouth (x0, y = y_min(until hit obstacle))
+	goWest (x = x_min(until hit obstacle), y0)
+	goEast (x = x_max(until hit obstacle), y0)
+(然後終點做一樣的事情？
+end point (xn, yn)
+	goNorth (xn, y = y_max(until hit obstacle))
+	goSouth (xn, y = y_min(until hit obstacle))
+	goWest (x = x_min(until hit obstacle), yn)
+	goEast (x = x_max(until hit obstacle), yn)
+)
+然後看要不要更新搜尋與終點最近的組合，
+也就是說，我們現在有 start' * 4, end' * 4，這樣組合會有16個，
+然後挑最近的更新為新的 start point 跟 end point，反覆做。
+最後(要try 幾次？)如果沒找到的話，要return沒找到，並往回找。
+
+所以現在我們要研究的是那個 obstacle 的問題。
+應該要有一個整個 chip 的牆壁的分布圖，然後判斷
+剛剛有問 chatGPT 他好像有給幾個寫法。
+
+Routing 的想法：
+好啊 納今天我們假設我們有一個前進方向
+然後我們就往這個方向前行，每次走d_distance
+並且往這個方向［的兩邊］發出射線，檢查碰到牆壁的位置
+一旦發現碰到牆壁的具有增大，代表說這裡可能會是一個出口
+所以我們就記錄這個位置，然後持續檢查，直到又有一個變化
+那我們就把這之間的點都做一個recurrsion，也就是再 routing 一次
+(那終點也要做？)
+
+新的Band search algorithm的發想:
+一開始只有起點和終點，以及一堆牆壁
+第一個level的band會是只有線，沒有寬度
+source(x1, y1)會產生
+Band_X(){
+	containTerminal = 1;
+	zoneName = sourceZoneName;
+	direction_isX = 1;
+	parent = nullptr;
+	minEdge = maxEdge = y1;
+	minEnd = maxEnd = x1;
+	然後這個band會做direction的detectWall{
+		for w : allWalls {
+			do {
+				maxEnd += dx;
+				minEnd += dx;
+				if(hitWall) break;
+			}
+		}
+	}
+}
+Band_Y 做同樣的事情
+一樣會有OSB、OTB、CSB、CTB
+step1: initialization
+step2: search if intersect
+step3: store current into old
+step4: use current to extend new bands (ESB、ETB)
+	   and exchange the extended and current
+step5: find the path
+
+請利用c++實作一個程式：
+以下是這個程式會用到的一個資料型態：pair
+class Pair {
+public:
+	Pair(){}
+	Pair(double Min, double Max) {
+		// Min should smaller than Max, 
+		// but in case we still check that
+		this->min = std::min(Min, Max);
+		this->max = std::max(Min, Max);
+	}
+	double min,max;
+	void operator =(Pair const &other) {
+		this->min = other.min;
+		this->max = other.max;
+	}
+};
+給定一個pair為target，接下來輸入數個pair為sources，
+當source的範圍有涵蓋到target，則紀錄這個source，並繼續接收sources，直到整個target的範圍被接收完
+如，target為Pair(3.2, 5.7)，sources:
+Pair(11.7, 18.0) //這個不會被紀錄因為他不再target的範圍
+Pair(0.8, 3.3) // 這個會被紀錄，3.3>=3.2
+(因此target目前3.2~3.3這個範圍被涵蓋到了)
+Pair(4.6, 4.7) // 這個也在範圍內，會被紀錄
+(因此，目前target的[3.2, 3.3], [4.6, 4.7]的範圍被涵蓋到了)
+Pair(2.2, 4.62) // 會被紀錄
+Pair(4.69, 5.88) // 會被紀錄
+此時，target的全部範圍已經被涵蓋，則結束程式。
+
+我想要對這個程式做一些小更動
+我想要改成，"只紀錄最先覆蓋的那些sources"，並將這些區間紀錄在 RangeCoverage 裡面
+什麼意思呢?舉個例子
+Pair target(0, 11);
+接下來輸入sources:
+Pair(10, 12) // 區間[10, 11]被紀錄在 RangeCoverage 裡面
+Pair(0, 7) // 區間[0, 7]被紀錄在 RangeCoverage 裡面
+(這裡我們看到，僅剩下[7, 10]這個區間未被紀錄，而接下來就是主要更動的地方)
+Pair(0, 9) // 注意到，[0,7]先前已經被紀錄過，所以這邊幫我只紀錄[7,9]就好(在 RangeCoverage 裡面)
+Pair(7, 9) // 這個source在target的區間內，但先前[0,9]已經紀錄過，因此[7,9]不應被紀錄
+Pair(10,11) // 同理
+Pair(2,3) // 同理
+Pair(4,13) // 這裡將target補齊了，因為只剩下[9,10]未被紀錄，所以[9,10]被紀錄在 RangeCoverage 裡面
+結束程式
+
+讓我們看到這張圖。這張圖代表一個chip上block的分佈
+chip的邊界為最外框為紅色的大長方形。
+block為chip上一些rectilinear形狀的物體，也就是圖中黃色的部分
+block有幾個重要的資訊:
+1. vector<Point> vertices: block的頂點
+2. string name: BLOCK_0, BLOCK_1等等
+3. bool is_feedthroughable: 是否可穿過
+4. int through_block_net_num: 可穿過這個block的net數量(但我們今天的重點不在net)
+5. vector<Edge> edges: block的邊
+edges是我們今天想要討論的
+我想要寫一個vector存取chip 上，所有edges的資料(任何一個block)
+並且我可以修改這個edges的資訊(include some boolean of that edge)，以方便我接下來程式的進行
+(主要是我想要按照他們的fixedCoordinate排序，但這之後再提)
+因此，這個vector將會是以指標的形式存在
+我想要你幫助我完成這個程式
+
+以下是可能你會需要的資訊：
+
+// 0. Zone.h
+
+class Zone {
+public:
+  Zone() {}
+  string name;
+  vector<Point> vertices;
+  virtual ~Zone() {}
+};
+
+// 1. Block.h
+
+struct BlockEdgeAndNum {
+	vector<Point> edge;
+	int net_num;
+};
+class Edge {
+public:
+	Edge(){}
+	Edge(bool, double, Pair, string);
+	Edge(bool isVertical, double fixed, double range_min, double range_max, string blockName);
+
+	bool isVertical; // 0: horizontal, 1: vertical
+	double fixedCoord;
+	Pair rangeCoord;
+
+	void getBlockVertices(Block const &block);
+	void rearrangement();
+	bool inRange(double const &value) const;
+
+	// 註: 我還沒有完全確定Edge的結構要包含哪些東西
+};
+class Block : public Zone {
+public:
+	Block();
+	Block(Block const &);
+	string blkID;
+	Point coordinate;
+	string facingFlip;
+
+	int through_block_net_num;
+	vector<BlockEdgeAndNum> through_block_edge_net_num;
+	vector<vector<Point>> block_port_region;
+	bool is_feedthroughable;
+	bool is_tile;
+	vector<Edge> edges;
+
+	int UNITS_DISTANCE_MICRONS;
+	double border_X;
+	double border_Y;
+
+	vector<Block> allBlocks;
+
+	void ParserAllBlocks(int const &testCase);
+	void expandVertices();
+	void showBlockInfo();
+};
+
+// 2. Chip.h
+
+class Chip : public Zone {
+public:
+	Chip(int const &testCase);
+	vector<Zone *> totZone;
+
+	double border_X;
+	double border_Y;
+	
+	Edge edges;	
+	void showAllZones();
+	Block getBlock(string) const;
+	Region getRegion(string) const;
+	~Chip();
+};
+
+如：covered_1 = {
+	[0,1],
+	[1,5],
+	[5,7]
+}
+covered_2 = {
+	[0,1],
+	[1,3],
+	[3,6]
+}
+得到最終合併 
+vector<Pair> covered_combine(vector<Pair> a, vector<Pair> b) {
+	// 程式實作
+}
+結果 = {
+	[0,1],
+	[1,3],
+	[3,5],
+	[5,6],
+	[6,7]
+}
+
+還記得你之前我向您問過關於rangeCoverage的問題嗎?
+
+我現在想要更改這個程式，變成只輸出splitPoint。 
+
+如果input為 Pair target(0, 11); 
+vector sources = {
+	Pair(0, 3),
+	Pair(2, 5),
+	Pair(4, 7),
+	Pair(1, 6),
+	Pair(6.3, 9),
+	Pair(8.6, 11.4)
+}; 
+
+則原本的輸出會是 Pair(0, 3) Pair(3, 5) Pair(5, 7) Pair(7, 9) Pair(9, 11)  
+
+我現在只想要輸出 0, 3, 5, 7, 9, 11
+
+我現在想要您幫我寫一個整合的程式
+我現在會有兩個vector<CoveredRange>，分別為left和right
+我要你幫我做的事是，合併left與right，使得他們生成一組新的vector<Band>
+
+class Band {
+public: 
+	Pair direction, extended;
+};
+
+假設 left: {
+	CoveredRange(Pair(1, 6), 1),
+	CoveredRange(Pair(7, 9), 2),  
+	CoveredRange(Pair(0, 1), 3),       
+	CoveredRange(Pair(6, 7), 5),     
+	CoveredRange(Pair(9, 11), 6) 
+}
+right: {
+	CoveredRange(Pair(0, 3), 11)
+	CoveredRange(Pair(3, 5), 12)       
+	CoveredRange(Pair(5, 7), 13)       
+	CoveredRange(Pair(7, 9), 15)       
+	CoveredRange(Pair(9, 11), 16)
+}
+
+left的parameter為band的左邊boundary，同理right也是
+一旦left或right的range出現斷層(也就是所謂的splitPoint)
+則將此時的左右boundary記起來，儲存在direction，並把此時的range記起來
+
+基本上函式的運作邏輯已經寫在註解裡面了。 
+我想問的是，我的設計應該是"如果extendedBand已經存在於oldBands或currentBands或extendedBands"的話，那麼這筆資料就不會被寫入，
+所以每當執行到step4時，照理來說應該extendedBand應該都會是新的，沒有出現過的Band
+但當我執行
+cout << "> CSB:\n";
+printBands(CSB);
+cout << "> CTB:\n";
+printBands(CTB);
+的時候，會發現舊的Band仍然存在於currentBand(currentBand是由extendedBand寫入)
+我懷疑有兩種因素造成:
+1. 是指標操作上有錯誤才導致
+2. alreadyExist的函式判斷邏輯有誤
+所以我這裡提供 alreadyExist的函式代碼
+
+bool Band::operator ==(Band* const other) const {
+	return this->x == other->x && this->y == other->y;
+}
+bool Band::alreadyExist(vector<Band*> bands) {
+	for (Band* const b : bands) {
+		if (this == b) {
+        	cout << "x: [" << b->x.min << ", " << b->x.max << "]";
+        	cout << " y: [" << b->y.min << ", " << b->y.max << "]" << endl;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+同時，也有可能是判斷式中，指標的錯誤比對造成
+想請問我哪裡有寫錯，請不吝嗇告訴我
+
+// chatGPT認為是我的比較內容有誤
+
+但首先，alreadyExist我就是故意要設計成說，如果他們的x跟y相等的話就return true
+況且新生成的Band的指標位址一定跟原本存在的指標位址不同
+我的"指標操作上有錯誤"是指說我可能沒有正確的刪除、複製、或指向要操作的資料
+希望你可以針對這個下去解答。
+若您真的很需要mergeCoveredRanges 相關的代碼的話，我在這邊貼給您參考，
+但我已經demo過，應該不太可能會有問題(但很有可能問題就在這裡)
+
+我有一個重大的發現
+我在不更動程式碼的情況下，連續執行兩次
+我發現，輸出的結果不一樣，這讓我更確信一定是指標記憶體的 操作不當
+請不要吝嗇，並詳細的在看一次程式碼，檢查哪裡可能會造成指標的操作有誤
+如指標的vector操作(push_back、clear等等)，或是沒有適當delete，或是兩vector之間元素的轉移等等
+
+現在遇到的問題
+1. edge要連結到block，所以我現在在寫Edge裡面有 Block *block 這個東西 // 待確認
+2. 從chip.totEdge蒐集到的edges似乎不正確，可能很需要重新檢查一下
+3. 我現在在想那些facingflip再平移的那個地方到底有沒有問題
+4. net 的 must_through 的座標我記得好像還沒處理facingflip
+5. band search 應該是要等source bands 完全 intersect 到 level 0 的 target 才可以結束
+	在這之前所有得到的intersect的band path的可能都要記錄下來
+	band path要寫一個函式，得到確切每一條band path中的最短路徑
+	然後在這些path裡面找到最短的那一條當作最終結果
+6. 還沒處理must through 的部分
+7. 還沒處理feedthrough 一個block的時候要 through_net_num--
+8. 應該先這樣有想到再說
+
+我有一些指標無法正確存取的問題
+以下是我程式的架構，共有Employee、Office、Company與main這些
+
+** Employee.h
+#ifndef EMPLOYEE_H
+#define EMPLOYEE_H
+
+#include <string>
+
+class Office; // 前向声明
+
+class Employee {
+public:
+    Employee(std::string n, int i);
+    std::string name;
+    int ID;
+    Office* office; // 指向所属 Office 的指针
+};
+
+#endif // EMPLOYEE_H
+
+** Employee.cpp
+#include "Employee.h"
+
+Employee::Employee(std::string n, int i) : name(n), ID(i), office(nullptr) {}
+
+** Office.h
+#ifndef OFFICE_H
+#define OFFICE_H
+
+#include <vector>
+#include <string>
+#include "Employee.h"
+
+class Office {
+public:
+    Office(std::string addr);
+    std::string address;
+    std::vector<Employee> employees;
+
+    Employee addedEmployee(std::string n, int i);
+};
+
+#endif // OFFICE_H
+
+** Office.cpp
+#include "Office.h"
+
+Office::Office(std::string addr) : address(addr) {}
+
+Employee Office::addedEmployee(std::string n, int i) {
+    Employee newEmployee(n, i);
+    newEmployee.office = this; // 设置 office 指针
+    employees.push_back(newEmployee);
+    return newEmployee;
+}
+
+** Company.h
+#ifndef COMPANY_H
+#define COMPANY_H
+
+#include <vector>
+#include "Office.h"
+
+class Company {
+public:
+    void setAllOffices();
+    void addOffice(Office& office);
+
+    std::vector<Office> allOffices;
+    std::vector<Employee> allEmployees;
+};
+
+#endif // COMPANY_H
+
+** Company.cpp
+#include "Company.h"
+#include <string>
+
+void Company::setAllOffices() {
+    for (int i = 0; i < 3; i++) {
+        std::string office_addr(1, 'G' + i);
+        Office tempOffice(office_addr);
+        for (int j = 0; j < 3; j++) {
+            std::string employee_name = office_addr + "_emp_" + std::to_string(j);
+            Employee newEmployee = tempOffice.addedEmployee(employee_name, j);
+            allEmployees.push_back(newEmployee); // 添加到 allEmployees
+        }
+        addOffice(tempOffice);
+    }
+}
+
+void Company::addOffice(Office& office) {
+    allOffices.push_back(office);
+}
+
+** main.cpp
+#include <iostream>
+#include "Company.h"
+
+int main() {
+    Company company;
+    company.setAllOffices();
+
+    for (const Employee& emp : company.allEmployees) {
+        std::cout << "Employee: " << emp.name << ", Office Address: " << emp.office->address << std::endl;
+    }
+
+    return 0;
+}
+
+在執行到main中的印出emp.office->address時，會無法印出東西，或直接結束程式，請問要如何修改？
+
+d(ln(dmu)) < 10/ln(ln(mu)) && d(dpsi) < sqrt(costUpS(1))
+psi + dpsi > (costUpS(1) + costUpS(2))
+
+我會給定一個 vector<Point> area = {
+	Point(x0, y0),
+	Point(x1, y1),
+	Point(x2, y2),
+	Point(x3, y3),
+	...
+}
+
+注意！此area必定為rectilinear圖形
+
+然後會有一個點Point(x, y)，寫一個程式 bool isInside(/*variables*/);
+判斷這個點是否會在這個area裡面
+
+example:
+
+vector<Point> area = {
+	Point(0, 0),
+	Point(10, 0),
+	Point(10, 10),
+	Point(8, 10),
+	Point(8, 2),
+	Point(2, 2),
+	Point(2, 8),
+	Point(6, 8),
+	Point(6, 10),
+	Point(0, 10)
+}
+
+Point p1(3, 3); // isInside = false;
+Point p2(9, 5); // isInside = true;
+
+寫一個用python matplotlib 繪製多個長方形的程式
+csv的格式會是：
+group,x1,y1,x2,y2
+x1,y1,x2,y2會組成一個長方形，group則會決定哪些長方形是一組的
+同一組的長方形會share同樣的顏色。
+
+那些很奇怪的位置的channel，反正之後會有intersect，如果intersect的數量為0，那就把這個channel給殺了
+
+我想問關於path finding node 細化的問題
+假設我現在有一個單位為2的node diagram{
+	(0,0),(2,0),(4,0),(6,0)...
+	(0,2),(2,2),(4,2),(6,2)...
+	(0,4),(2,4),(4,4),(6,4)...
+	...
+}
+然後我最終的path也"一定"會在這些nodes上
+如：有一條path A{(0,0),(12,0),(12,6),(10,6)}
+那假設我現在多了 數個隨機的，單位為1的nodes
+如上述所述，這些單位為1nodes並不會是path的node
+但有可能會位在最終找到的path的路徑上
+比如剛剛提到的path A，在(0,0)->(12,0)的路徑上可能有一個點(7,0)
+(但是在紀錄這條path的時候仍然只紀錄有轉折的點，因此(7,0)不會被紀錄)
+那我現在的問題是，我在做search algorithm的時候，會不會受到這些nodes的影響
+比如說 Dijkstra’s algorithm 或 A* algorithm 好了，會不會改變運算時間
+
+我想重新闡述我的問題：
+1. 我的問題應該不是想問曼哈頓距離的A*演算法的實現，
+而是想問說，是在一個二維平面上進行A*演算法，"如果"只以距離作為考量，則他的cost要如何計算
+2. 請改寫成 c++的程式。
+
+有兩個關於迴圈的問題想要請教
+我先問第一個:
+vector<MyClass> vec;
+for (auto const &m: vec){
+	// other operation
+	for (auto const &n: vec){
+		n.MyFunction(n);
+		// other operation
+	}
+}
+我是想問說這個有沒有更聰明的解法?就是同一個vector的雙重運算
+
+vector<MyClass> vec;
+for (/*拜訪vec中的元素 m*/){
+	for (/*拜訪vec中的元素 n*/){
+		m.MyFunction(n);
+		// 如果今天我的 MyFunction是會造成vec中元素的消失(刪除元素)，
+		// 請問這樣會對迴圈造成什麼樣的影響?
+	}
+}
+[10401.000,10440.000/4909.999],
+[10401.000,10440.000/4909.999]
+
+class Node {
+public:
+    int x, y;
+    double weight = 0;
+    Node (int X, int Y): x(X), y(Y) {}
+    Node (int X, int Y, double w): x(X), y(Y), weight(w) {}
+
+	vector<Node*> neighbors; // or std::set<Node>
+	// 可能會使用 shared_ptr<Node>
+};
+
+class NodeManagerPrecomputed {
+private:
+    std::map<int, std::map<int, Node>> nodes;
+
+public:
+    void addNode(int x, int y, double weight = 0) {
+        nodes[x][y] = node(x, y, weight);
+        updateNeighbors(x, y);
+    }
+
+    void recordNeighbors(int x, int y) {
+        // TODO
+    }
+
+    std::vector<Node*> getNeighbors(int x, int y) {
+        return nodes[x][y].neighbors;
+    }
+};
+
+int main() {
+    std::set<int> x_value = { 1, 3, 7, 8, 10, 16, 24, 45 };
+    std::set<int> y_value = { 3, 4, 8, 9, 15, 21, 23 };
+
+    Node_manager Nodes;
+
+    for (int const &x: x_value) {
+        for (int const &y: y_value) {
+            Nodes.addNode(Node(x, y));
+        }
+    }
+
+    cout << "\ndone.";
+    return 0;
+}
+請完成recordNeighbors
+
+以下詳細定義neighbor：如code 所顯示:
+std::set x_value = { 1, 3, 7, 8, 10, 16, 24, 45 };
+std::set y_value = { 3, 4, 8, 9, 15, 21, 23 };
+代表所產生出來的node 的座標會有哪些組合
+如x=1的node會有(1,3), (1,4), (1,8), (1,9), (1,15), (1,21), (1,23)
+以此類推，而neighbor的定義為相同x或相同y下，他的前一個、下一個node即為neighbor
+且斜對角不算是neighbor
+如：以node(1,9)來說，他的neighbor會有node(1,8)(y方向前一個)、node(1,15)(y方向下一個)、node(3,9)(x方向下一個)，共三個
