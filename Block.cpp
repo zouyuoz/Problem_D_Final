@@ -1,5 +1,6 @@
 #include "Block.h"
 #include <climits>
+#include <cstddef>
 #include <iostream>
 
 Block::Block(){}
@@ -129,6 +130,16 @@ void Block::transposeAllVertices() {
 	return;
 }
 
+void Block::adjustAllPorts() {
+	for (size_t i = 0; i < block_port_region.size(); ++i) {
+		adjustPortCoordinate(block_port_region[i]);
+	}
+	for (size_t i = 0; i < through_block_edge_net_num.size(); ++i) {
+		adjustPortCoordinate(through_block_edge_net_num[i]->edge);
+	}
+	return;
+}
+
 bool isPointOnEdge(const Point& p, const Edge& edge) {
     if (edge.isVertical()) { return p.x == edge.fixed() && edge.inRange(p.y);
     } else { return p.y == edge.fixed() && edge.inRange(p.x); }
@@ -150,51 +161,67 @@ bool Block::enclose(const Point p) const {
     return inside;
 }
 
-bool Block::canThrough(bool direction_X, Point const point, Pair target) {
-	std::cerr << "\nWARNING: canThrough is design for checking a point "
-			  << "inside a block can penetrate a nonfeed block through "
-			  << "its BPR or TBENN, and is temporarily unfinish.\n";
-	int fix = direction_X? point.y: point.x;
-	for (auto const &e: block_port_region) {
-		if (direction_X == e.isVertical() && e.inRange(fix)) return 1;
+bool Block::noPort() const {
+	return !(through_block_edge_net_num.size() + block_port_region.size());
+}
+
+void Block::adjustPortCoordinate(Edge &theEdge) {
+	int adjustCoordValue = 0;
+	for (size_t i = 0; i < edges.size(); ++i) {
+		Edge blockEdge = edges[i];
+		bool belongs2BlockEdge = blockEdge.inRange(theEdge)
+			&& std::abs(blockEdge.fixed() - theEdge.fixed()) <= 2
+			&& blockEdge.isVertical() == theEdge.isVertical();
+		if (belongs2BlockEdge) {
+			adjustCoordValue = blockEdge.fixed();
+			break;
+		}
 	}
-	for (auto const &t: through_block_edge_net_num) {
-		Edge const e = t->edge;
-		if (direction_X == e.isVertical() && e.inRange(fix)) return 1;
+	if (adjustCoordValue == theEdge.fixed()) return;
+	if (theEdge.isVertical()) {
+		// fixed == X
+		theEdge.first.x = adjustCoordValue;
+		theEdge.second.x = adjustCoordValue;
+	} else {
+		// fixed == Y
+		theEdge.first.y = adjustCoordValue;
+		theEdge.second.y = adjustCoordValue;
 	}
-	return 0;
+	return;
 }
 
 bool Block::operator <(const Block& other) const { return this->name < other.name; }
 
-void Block::showBlockInfo() const {
-	cout << "blockName: '" << name << "'" << "\n"
-	<< "blkID: '" << blkID << "'" << "\n"
-	<< "coordinate: (" << coordinate.x << ", " << coordinate.y
+std::ostream& operator<<(std::ostream& os, const Block& b) {
+	os << "blockName: '" << b.name << "'" << "\n"
+	<< "blkID: '" << b.blkID << "'" << "\n"
+	<< "coordinate: (" << b.coordinate.x << ", " << b.coordinate.y
 	<< ") " << "\n"
-	<< "facingFlip: '" << facingFlip << "'" << "\n";
+	<< "facingFlip: '" << b.facingFlip << "'" << "\n";
 	
-	cout << "vertices: " << "\n";
-	for (auto v : vertices) {
-		cout<< v.x << "\t" << v.y << "\n";
+	os << "vertices:\n";
+	for (auto v : b.vertices) {
+		os << v.x << "\t" << v.y << "\n";
 	}
 
-	cout << "through_block_net_num: " << through_block_net_num << "\n"
+	os << "through_block_net_num: " << b.through_block_net_num << "\n"
 	<< "through_block_edge_net_num: ";
-	for (auto const &TBENN : through_block_edge_net_num) {
-		cout << "\n" << "(" << TBENN->edge.first.x << ", " << TBENN->edge.first.y << ") ("
+	for (auto const &TBENN : b.through_block_edge_net_num) {
+		os << "\n" << "(" << TBENN->edge.first.x << ", " << TBENN->edge.first.y << ") ("
 		<< TBENN->edge.second.x << ", " << TBENN->edge.second.y << ") " << TBENN->net_num;
 	}
-	cout << "\n";
+	os << "\n";
 
-	cout << "block_port_region: ";
-	for (Edge const &BPR : block_port_region) {
-		cout << "\n" << "(" << BPR.first.x << ", " << BPR.first.y
+	os << "block_port_region: ";
+	for (Edge const &BPR : b.block_port_region) {
+		os << "\n" << "(" << BPR.first.x << ", " << BPR.first.y
 		<< ") (" << BPR.second.x << ", " << BPR.second.y << ")";
 	}
-	cout << "\n";
+	os << "\n";
 	
-	cout << "is_feedthroughable: " << is_feedthroughable << "\n"
-	<< "is_tile: " << is_tile << "\n";
-	cout << "----------------------" << "\n";
+	os << "is_feedthroughable: " << b.is_feedthroughable << "\n"
+	<< "is_tile: " << b.is_tile << "\n";
+	os << "----------------------" << "\n";
+
+	return os;
 }

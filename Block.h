@@ -35,14 +35,13 @@ public:
 	vector<Edge> edges;
 
 	void verticesToEdges();
-	// void addENN(const Edge&, const int&);
-	// void addBPR(const Edge&);
 	void transposeAllVertices();
-	void showBlockInfo() const;
+	void adjustAllPorts();
 	bool enclose(const Point) const;
-	bool canThrough(bool, Point, Pair = Pair(0, 0));
+	bool noPort() const;
+	void adjustPortCoordinate(Edge& theEdge);
 	bool operator <(const Block&) const;
-	// 還沒寫net穿過block會減少through_block_net_num
+	friend std::ostream& operator<<(std::ostream& os, const Block& block);
 };
 
 #endif // BLOCK_H_INCLUDED

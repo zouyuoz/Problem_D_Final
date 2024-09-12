@@ -1,10 +1,20 @@
 #include "Net.h"
+#include <cstddef>
+#include <memory>
 
 Net::Net(Terminal tx, Terminal rx): TX(tx) {
 	RXs.push_back(rx);
 }
 Net::Net(int id, Terminal tx, Terminal rx): ID(id), TX(tx) {
 	RXs.push_back(rx);
+}
+Net Net::copyConstr() const {
+	Net theCopied;
+	theCopied.ID = ID;
+	theCopied.num = num;
+	theCopied.TX = TX;
+	theCopied.bBox = bBox;
+	return std::move(theCopied);
 }
 
 void Net::ParserAllNets (int const &testCase, Chip const &chip) {
@@ -23,13 +33,19 @@ void Net::ParserAllNets (int const &testCase, Chip const &chip) {
 		tempNet.ID = net["ID"].GetInt();
 		// TX_NAME:
 		tempNet.TX.name = net["TX"].GetString();
-		if (tempNet.TX.name[0] == 'B') tempNet.TX.block = chip.getBlock(tempNet.TX.name);
 		// TX_COORD:
 		tempNet.TX.coord = Point(net["TX_COORD"][0].GetDouble() * UDM, net["TX_COORD"][1].GetDouble() * UDM);
-		tempNet.TX.absoluteCoord(chip);
+
+		if (tempNet.TX.name[0] == 'B') {
+			tempNet.TX.block = chip.getBlock(tempNet.TX.name);
+			tempNet.TX.absoluteCoord();
+		}
+		else for (const auto &b: chip.allBlocks) {
+			if (b->enclose(tempNet.TX.coord)) { tempNet.TX.block = b; break; }
+		}
 
 		// RX_NAME:
-	    vector<string> tempRXNameArray;
+		vector<string> tempRXNameArray;
 		for (const auto &rxName : net["RX"].GetArray()) {
 			tempRXNameArray.push_back(rxName.GetString());
 		}
@@ -40,71 +56,175 @@ void Net::ParserAllNets (int const &testCase, Chip const &chip) {
 		}
 		// Write into RXs
 		std::set<Terminal> non_repeat_rxs;
-	    for (int i = 0; i < tempRXNameArray.size(); i++){
+		for (int i = 0; i < tempRXNameArray.size(); i++){
 			Terminal RX(tempRXNameArray[i], tempRXCoordArray[i]);
-			if (tempRXNameArray[i][0] == 'B') RX.block = chip.getBlock(tempRXNameArray[i]);
-			RX.absoluteCoord(chip);
+			if (tempRXNameArray[i][0] == 'B') {
+				RX.block = chip.getBlock(tempRXNameArray[i]);
+				RX.absoluteCoord();
+			}
+			else for (const auto &b: chip.allBlocks) {
+				if (b->enclose(RX.coord)) { RX.block = b; break; }
+			}
+			
 			non_repeat_rxs.insert(RX);
-	    }
+		}
 		for (auto it = non_repeat_rxs.begin(); it !=non_repeat_rxs.end(); ++it) tempNet.RXs.push_back(*it);
 		non_repeat_rxs.clear();
 
+		// getBBox
+		tempNet.getBBox();
+
 		// NUM:
 		tempNet.num = net["NUM"].GetInt();
+		if (tempNet.num > max_net_num) max_net_num = tempNet.num;
 
 		// HMFT_MUST_THROUGH:
-        for (const auto &hmftmt : net["HMFT_MUST_THROUGH"].GetObject()) {
-            MUST_THROUGH tempHmftmt;
-            tempHmftmt.blockName = hmftmt.name.GetString();
-			Point blockCoord = chip.getBlock(tempHmftmt.blockName)->coordinate;
-			for (auto const &coord : hmftmt.value.GetArray()) {
-				Point first(coord[0].GetDouble() * UDM + blockCoord.x, coord[1].GetDouble() * UDM + blockCoord.y);
-				Point second(coord[2].GetDouble() * UDM + blockCoord.x, coord[3].GetDouble() * UDM + blockCoord.y);
-				tempHmftmt.edges.push_back(Edge(first, second));
-			}
-            tempNet.HMFT_MUST_THROUGHs.push_back(tempHmftmt);
-        }
-
-        // MUST_THROUGH:
-        for (const auto &mt : net["MUST_THROUGH"].GetObject()) {
-            MUST_THROUGH tempMt;
-            tempMt.blockName = mt.name.GetString();
-			Point blockCoord = chip.getBlock(tempMt.blockName)->coordinate;
+		for (const auto &mt : net["HMFT_MUST_THROUGH"].GetObject()) {
+			Edge tempMT;
+			string blockName = mt.name.GetString();
+			auto tempMTBlock = chip.getBlock(blockName);
+			Point blockCoord = tempMTBlock->coordinate;
 			for (auto const &coord : mt.value.GetArray()) {
 				Point first(coord[0].GetDouble() * UDM + blockCoord.x, coord[1].GetDouble() * UDM + blockCoord.y);
 				Point second(coord[2].GetDouble() * UDM + blockCoord.x, coord[3].GetDouble() * UDM + blockCoord.y);
-				tempMt.edges.push_back(Edge(first, second));
+				tempMT = Edge(first, second, tempMTBlock);
+				tempMTBlock->adjustPortCoordinate(tempMT);
+				tempMT.netID = tempNet.ID;
+				tempNet.HMFT_MUST_THROUGHs.push_back(tempMT);
 			}
-            tempNet.MUST_THROUGHs.push_back(tempMt);
-        }
+		}
 
-		// write into net
-		allNets.push_back(tempNet);
+		// MUST_THROUGH:
+		for (const auto &mt : net["MUST_THROUGH"].GetObject()) {
+			Edge tempMT;
+			string blockName = mt.name.GetString();
+			auto tempMTBlock = chip.getBlock(blockName);
+			Point blockCoord = tempMTBlock->coordinate;
+			for (auto const &coord : mt.value.GetArray()) {
+				Point first(coord[0].GetDouble() * UDM + blockCoord.x, coord[1].GetDouble() * UDM + blockCoord.y);
+				Point second(coord[2].GetDouble() * UDM + blockCoord.x, coord[3].GetDouble() * UDM + blockCoord.y);
+				tempMT = Edge(first, second, tempMTBlock);
+				tempMTBlock->adjustPortCoordinate(tempMT);
+				tempMT.netID = tempNet.ID;
+				tempNet.MUST_THROUGHs.push_back(tempMT);
+			}
+		}
+		if (tempNet.HMFT_MUST_THROUGHs.size() || tempNet.MUST_THROUGHs.size()) {
+			tempNet.setOrderedMTs();
+			allOrderedMTs.insert(allOrderedMTs.end(), tempNet.orderedMTs.begin(), tempNet.orderedMTs.end());
+		}
+		// 50 57 1014, 1014 interesting
+		// allNets.push_back(tempNet);
+		totalNets.insert(std::move(tempNet));
 	}
 	file.close();
 	return;
 }
 
-Net Net::getNet(int const &id) const {
-	for (const Net &n : allNets) {
-		if (n.ID == id) return n;
-	}
-	return Net();
+Net Net::getSoleNet(int const &id) const {
+	Net soleNet = copyConstr();
+	soleNet.RXs.clear();
+	soleNet.RXs.push_back(RXs[id]);
+	return soleNet;
 }
 
-void Terminal::absoluteCoord (Chip const &chip) {
-    int x = 0, y = 0;
-    if (name[0] == 'B') {
-        x = chip.getBlock(name)->coordinate.x;
-        y = chip.getBlock(name)->coordinate.y;
-    }
-    coord.x += x;
-    coord.y += y;
+/*=======================================*/
+
+void insertEdgeCoords2Set(set<int> &x_value, set<int> &y_value, const Edge &e) {
+	x_value.insert(e.first.x);
+	x_value.insert(e.second.x);
+	y_value.insert(e.first.y);
+	y_value.insert(e.second.y);
 	return;
 }
 
-Edge findBoundBox(vector<Point> const &coords){
-	int x_min = coords[0].x, x_max = coords[0].x, y_min = coords[0].y, y_max = coords[0].y;
+void Chip::initializeAllCell(const Net &net) {
+	set<int> x_value, y_value;
+
+	for (size_t i = 0; i < allEdges.size(); ++i) insertEdgeCoords2Set(x_value, y_value, allEdges[i]);
+	for (size_t i = 0; i < allBPRs.size(); ++i) insertEdgeCoords2Set(x_value, y_value, allBPRs[i]);
+	for (size_t i = 0; i < allTBENNs.size(); ++i) {
+		auto e = allTBENNs[i]->edge;
+		insertEdgeCoords2Set(x_value, y_value, e);
+	}
+	for (size_t i = 0; i < net.allOrderedMTs.size(); ++i) insertEdgeCoords2Set(x_value, y_value, net.allOrderedMTs[i]);
+
+    allCells.setXYvalue(x_value, y_value);
+	allCells.createCells(allBlocks, allBPRs, allTBENNs, net);
+	return;
+}
+
+void Cell_Manager::createCells(
+	const vector<shared_ptr<Block>> &allBlocks,
+	const vector<Edge> &allBPRs,
+	const vector<shared_ptr<EdgeNetNum>> &allTBENNs,
+	const Net net
+) {
+	int x_count = 0;
+	for (auto x1 = x_value.begin(); x1 != x_value.end(); ++x1) {
+        auto x2 = std::next(x1);
+        if (x2 == x_value.end()) break;
+		int y_count = -1;
+
+		for (auto y1 = y_value.begin(); y1 != y_value.end(); ++y1) {
+			auto y2 = std::next(y1);
+			if (y2 == y_value.end()) break;
+
+			Cell tempCell(Pair(*x1, *x2), Pair(*y1, *y2));
+			tempCell.checkInsideBlock(allBlocks);
+
+			for (auto const &e: allBPRs) {
+				if (tempCell.EdgeBelongs2Cell(e)) tempCell.BPR = e;
+			}
+			for (auto const &enn: allTBENNs) {
+				const Edge e = enn->edge;
+				if (tempCell.EdgeBelongs2Cell(e)) tempCell.TBENN = enn;
+			}
+			for (auto const &e: net.allOrderedMTs) {
+				if (tempCell.EdgeBelongs2Cell(e)) {
+					tempCell.someNetsMT = e;
+					// if (tempCell.someNetsMT.block->name == "BLOCK_11") cout << tempCell.someNetsMT.netID << "\n";
+				}
+			}
+			// if (tempCell.someNetsMT.block) {
+			// 	if (tempCell.someNetsMT.block->name == "BLOCK_11") cout << " : " << tempCell.someNetsMT.netID << "\n";
+			// }
+			tempCell.xIndex = x_count;
+			tempCell.yIndex = ++y_count;
+			cells[x_count][y_count] = std::make_shared<Cell>(tempCell);
+		}
+		++x_count;
+    }
+	// cout << "finished create\n";
+	// for (const auto &out: cells) {
+	// 	for (const auto &inner: out.second) {
+	// 		const auto c = inner.second;
+	// 		if (c->inBlock() == false) continue;
+	// 		if (c->block->name == "BLOCK_11") {
+	// 			if (c) cout << c->someNetsMT->netID << "\n";
+	// 		}
+	// 	}
+	// }
+}
+
+/*=======================================*/
+
+void Terminal::absoluteCoord() {
+	if (name[0] == 'B') {
+		coord.x += block->coordinate.x;
+		coord.y += block->coordinate.y;
+	}
+	return;
+}
+
+void Net::getBBox() {
+	vector<Point> coords;
+	for(Terminal const &rx : RXs){
+		coords.push_back(rx.coord);
+	}
+	coords.push_back(TX.coord);
+
+	int x_min = coords[0].x, x_max = x_min, y_min = coords[0].y, y_max = y_min;
 	for (auto const &c : coords) {
 		int x_this = c.x, y_this = c.y;
 		if (x_this > x_max) x_max = x_this;
@@ -112,53 +232,63 @@ Edge findBoundBox(vector<Point> const &coords){
 		if (y_this > y_max) y_max = y_this;
 		if (y_this < y_min) y_min = y_this;
 	}
-	return Edge(Point(x_min, y_min), Point(x_max, y_max));
+	bBox = Edge(Point(x_min, y_min), Point(x_max, y_max));
+	return;
+}
+int Net::bBoxArea() const {
+	int x_edge_length_mod = (bBox.second.x - bBox.first.x) / 2000;
+	int y_edge_length_mod = (bBox.second.y - bBox.first.y) / 2000;
+	return x_edge_length_mod * y_edge_length_mod;
+}
+int Net::bBoxHPWL() const {
+	return (bBox.second.x - bBox.first.x) + (bBox.second.y - bBox.first.y);
 }
 
-Edge Net::getBoundBoxArea() const {
-	vector<Point> coords;
-	for(Terminal const &rx : RXs){
-		coords.push_back(rx.coord);
-	}
-	coords.push_back(TX.coord);
-	return findBoundBox(coords);
+void Net::setOrderedMTs() {
+	orderedMTs = MUST_THROUGHs;
+	if (!HMFT_MUST_THROUGHs.size()) return;
+
+	auto mt = HMFT_MUST_THROUGHs[0];
+	Point edgeMidPoint((mt.first.x + mt.second.x) / 2, (mt.first.y + mt.second.y) / 2);
+	int mDistanceToSource = (edgeMidPoint.x - TX.coord.x) + (edgeMidPoint.y - TX.coord.y);
+	int mDistanceToTarget = (edgeMidPoint.x - RXs[0].coord.x) + (edgeMidPoint.y - RXs[0].coord.y);
+
+	if (mDistanceToSource < mDistanceToTarget) orderedMTs.insert(orderedMTs.begin(),mt);
+	else orderedMTs.push_back(mt);
+	return;
 }
 
-void Net::showNetInfo() const {
-	cout << "ID: " << ID << "\n"
-	<< "TX: " << TX.name << " (" << TX.coord.x << ", " << TX.coord.y << ")" << "\n"
-	<< "RXs: " << "\n";
-	for(const Terminal &rx: RXs){
-		cout << " - " << rx.name << " (" << rx.coord.x << ", " << rx.coord.y << ")" << "\n";
+std::ostream& operator <<(std::ostream& os, const Net& net) {
+	os << "ID: " << net.ID << "\n"
+	<< "TX: " << net.TX.name << " (" << net.TX.coord.x << ", " << net.TX.coord.y << ")" << ", In ";
+	if (net.TX.block) os << net.TX.block->name << "\n";
+	else os << "no block\n";
+	os << "RXs: " << "\n";
+	for(const Terminal &rx: net.RXs){
+		os << " - " << rx.name << " (" << rx.coord.x << ", " << rx.coord.y << ")" << ", In ";
+		if (rx.block) os << rx.block->name << "\n";
+		else os << "no block\n";
 	}
-	cout << "NUM: " << num << "\n"
+	os << "NUM: " << net.num << "\n"
 	<< "MUST_THROUGH: " << "\n";
-	if (MUST_THROUGHs.size()) {
-		for (const MUST_THROUGH &t : MUST_THROUGHs) {
-			cout << " - " << t.blockName;
-			Edge c = t.edges[0];
-			cout << " (" << c.first.x << ", " << c.first.y << ") (" << c.second.x << ", " << c.second.y << ")\n";
-			if (t.edges.size() == 1) continue;
-			else {
-				for (int i = 0; i < t.blockName.size() + 3; i++) { cout << " "; }
-				Edge c = t.edges[1];
-				cout << " (" << c.first.x << ", " << c.first.y << ") (" << c.second.x << ", " << c.second.y << ")\n";
-			}
+	if (net.MUST_THROUGHs.size()) {
+		for (const Edge &t : net.MUST_THROUGHs) {
+			os << " - " << t.block->name;
+			os << " (" << t.first.x << ", " << t.first.y << ") (" << t.second.x << ", " << t.second.y << ")\n";
 		}
 	}
-	cout << "HMFT_MUST_THROUGH: " << "\n";
-	if (HMFT_MUST_THROUGHs.size()) {
-		for (const MUST_THROUGH &t : HMFT_MUST_THROUGHs){
-			cout << " - " << t.blockName;
-			Edge c = t.edges[0];
-			cout << " (" << c.first.x << ", " << c.first.y << ") (" << c.second.x << ", " << c.second.y << ")\n";
-			if (t.edges.size() == 1) { continue; }
-			else {
-				for (int i = 0; i < t.blockName.size() + 3; i++) { cout << " "; }
-				Edge c = t.edges[1];
-				cout << " (" << c.first.x << ", " << c.first.y << ") (" << c.second.x << ", " << c.second.y << ")\n";
-			}
+	os << "HMFT_MUST_THROUGH: " << "\n";
+	if (net.HMFT_MUST_THROUGHs.size()) {
+		for (const Edge &t : net.HMFT_MUST_THROUGHs){
+			os << " - " << t.block->name;
+			os << " (" << t.first.x << ", " << t.first.y << ") (" << t.second.x << ", " << t.second.y << ")\n";
 		}
 	}
-	cout << "----------------------" << "\n";
+	os << "----------------------" << "\n";
+	return os;
+}
+bool Net::operator <(const Net& other) const {
+	if (bBoxArea() != other.bBoxArea()) return bBoxArea() < other.bBoxArea();
+	if (bBoxHPWL() != other.bBoxHPWL()) return bBoxHPWL() < other.bBoxHPWL();
+	return ID < other.ID;
 }

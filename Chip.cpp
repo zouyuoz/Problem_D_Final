@@ -1,5 +1,4 @@
 #include "Chip.h"
-#include <climits>
 #include <fstream>
 #include <memory>
 
@@ -69,9 +68,8 @@ Chip::Chip(int const &testCase) {
     					if (!(tbenn.Size() == 3 && tbenn[0].IsArray() && tbenn[1].IsArray())) continue;
 						Point a(tbenn[0][0].GetDouble() * UNITS_DISTANCE_MICRONS, tbenn[0][1].GetDouble() * UNITS_DISTANCE_MICRONS);
 						Point b(tbenn[1][0].GetDouble() * UNITS_DISTANCE_MICRONS, tbenn[1][1].GetDouble() * UNITS_DISTANCE_MICRONS);
-						// EdgeNetNum temp(Edge(a, b, tempBlock), tbenn[2].GetInt());
-						tempBlock->through_block_edge_net_num.push_back(std::make_shared<EdgeNetNum>(Edge(a, b, tempBlock), tbenn[2].GetInt()));
-						// tempBlock->addENN(Edge(a, b), tbenn[2].GetInt());
+						Edge port = Edge(a, b, tempBlock);
+						tempBlock->through_block_edge_net_num.push_back(std::make_shared<EdgeNetNum>(port, tbenn[2].GetInt()));
 					}
 
 					// block_port_region
@@ -79,8 +77,8 @@ Chip::Chip(int const &testCase) {
 					for (auto const &thing : BPR.GetArray()) {
 						Point a(thing.GetArray()[0][0].GetDouble() * UNITS_DISTANCE_MICRONS, thing.GetArray()[0][1].GetDouble() * UNITS_DISTANCE_MICRONS);
 						Point b(thing.GetArray()[1][0].GetDouble() * UNITS_DISTANCE_MICRONS, thing.GetArray()[1][1].GetDouble() * UNITS_DISTANCE_MICRONS);
-						tempBlock->block_port_region.push_back(Edge(a, b, tempBlock));
-						// tempBlock->addBPR(Edge(a, b));
+						Edge port = Edge(a, b, tempBlock);
+						tempBlock->block_port_region.push_back(std::move(port));
 					}
 					if (tempBlock->name == block["block_name"].GetString()) break;
 				}
@@ -128,6 +126,8 @@ Chip::Chip(int const &testCase) {
 			// store the fliped and shifted vertices into edges
 			tempBlock->verticesToEdges();
 
+			tempBlock->adjustAllPorts();
+
 			// collect edges from tempBlock, and write into totEdge
 			for (Edge &e: tempBlock->edges) allEdges.push_back(e);
 			for (Edge &e: tempBlock->block_port_region) allBPRs.push_back(e);
@@ -174,40 +174,7 @@ Chip::Chip(int const &testCase) {
 		[](const auto& a, const auto& b) {
 			return a.fixed() < b.fixed();
 		}
-	);
-}
-
-void insertCoordsFromEdgeVec2Set(std::set<int> &x_value, std::set<int> &y_value, const vector<Edge> &edges) {
-	for (size_t i = 0; i < edges.size(); ++i) {
-		x_value.insert(edges[i].first.x);
-		x_value.insert(edges[i].second.x);
-		y_value.insert(edges[i].first.y);
-		y_value.insert(edges[i].second.y);
-	}
-	return;
-}
-
-void insertCoordsFromEdgeVec2Set(std::set<int> &x_value, std::set<int> &y_value, const vector<shared_ptr<EdgeNetNum>> &tbenn) {
-	for (size_t i = 0; i < tbenn.size(); ++i) {
-		Edge e = tbenn[i]->edge;
-		x_value.insert(e.first.x);
-		x_value.insert(e.second.x);
-		y_value.insert(e.first.y);
-		y_value.insert(e.second.y);
-	}
-	return;
-}
-
-void Chip::initializeAllGrid() {
-	set<int> x_value, y_value;
-
-	insertCoordsFromEdgeVec2Set(x_value, y_value, allEdges);
-	insertCoordsFromEdgeVec2Set(x_value, y_value, allBPRs);
-	insertCoordsFromEdgeVec2Set(x_value, y_value, allTBENNs);
-
-    allChannels.setXYvalue(x_value, y_value);
-	allChannels.createChannels(allBlocks, allBPRs, allTBENNs);
-	return;
+	);  
 }
 
 shared_ptr<Block> Chip::getBlock(string blockName) const {
@@ -222,11 +189,6 @@ Region Chip::getRegion(string regionName) const {
 		if (r.name == regionName) return r;
 	}
 	return Region();
-}
-
-void Chip::showAllZones() const {
-	for (auto const &b : allBlocks) { b->showBlockInfo(); }
-	for (auto const &r : allRegions) { r.showRegionInfo(); }
 }
 
 Chip::~Chip() {}

@@ -5,7 +5,7 @@
 
 class Point {
 public:
-    Point(int x = 99, int y = 99) : x(x), y(y) {}
+    Point(int x = -99, int y = -99) : x(x), y(y) {}
 
     int x, y;
 	

@@ -2,15 +2,13 @@
 #define NET_H_INCLUDE
 
 #include "Chip.h"
+#include <cmath>
 #include "include\rapidjson\document.h"
 #include <array>
+#include <memory>
 
 using namespace rapidjson;
-
-struct MUST_THROUGH {
-	string blockName;
-	vector<Edge> edges;
-};
+using std::shared_ptr;
 
 class Net {
 public:
@@ -20,20 +18,38 @@ public:
 
 	int ID;
 	int num;
+	int max_net_num = 0;
 	Terminal TX;
 	vector<Terminal> RXs;
-	vector<MUST_THROUGH> MUST_THROUGHs;
-	vector<MUST_THROUGH> HMFT_MUST_THROUGHs;
+	vector<Edge> MUST_THROUGHs;
+	vector<Edge> HMFT_MUST_THROUGHs;
+	vector<Edge> orderedMTs;
 
 	vector<Point> allNodes;
-	vector<Net> allNets;
+	// vector<Net> allNets;
+	set<Net> totalNets;
+	vector<Edge> allOrderedMTs;
 
-	int boundBoxArea;
-	Edge getBoundBoxArea() const;
+	Edge bBox;
+	void getBBox();
+	int bBoxArea() const;
+	int bBoxHPWL() const;
 
 	void ParserAllNets(int const &testCase, Chip const &chip);
-	Net getNet(int const &ID) const;
-	void showNetInfo() const;
+	Net copyConstr() const;
+	Net getSoleNet(int const &ID) const;
+	void setOrderedMTs();
+    friend std::ostream& operator<<(std::ostream& os, const Net& net);
+	bool operator <(const Net& other) const;
+};
+
+class Net_Manager {
+public:
+	int max_net_num = 0;
+	set<Net> totalNets;
+	vector<Edge> allOrderedMTs;
+
+	void ParserAllNets(int const &testCase, Chip const &chip);
 };
 
 #endif // NET_H_INCLUDE

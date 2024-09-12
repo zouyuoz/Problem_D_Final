@@ -5,7 +5,7 @@
 #include "Region.h"
 #include "Edge.h"
 #include "Zone.h"
-#include "Channel.h"
+#include "Cell.h"
 
 #include "include\rapidjson\document.h"
 #include <fstream>
@@ -22,12 +22,13 @@ using std::regex;
 using std::sregex_iterator;
 using namespace rapidjson;
 
+class Net;
+
 class Chip : public Zone {
 public:
 	Chip() {}
 	Chip(int const &testCase);
-	void initializeAllChannel();
-	void initializeAllGrid();
+	void initializeAllCell(const Net&);
 
 	Point border;
 	int UNITS_DISTANCE_MICRONS;
@@ -37,11 +38,10 @@ public:
 	vector<Edge> allEdges;
 	vector<Edge> allBPRs;
 	vector<shared_ptr<EdgeNetNum>> allTBENNs;
-	Channel_Manager allChannels;
+	Cell_Manager allCells;
 
 	shared_ptr<Block> getBlock(string) const;
 	Region getRegion(string) const;
-	void showAllZones() const;
 	~Chip();
 };
 

@@ -1,6 +1,10 @@
 #include <iostream>
 #include <string>
+#include <set>
 #include <map>
+
+using std::set;
+using std::cout;
 
 struct Student {
     int id;
@@ -9,16 +13,12 @@ struct Student {
 };
 
 int main() {
-    std::map<std::string, Student> studentMap;
-    studentMap["Tom"] = {1, "Tom", 18};
-    studentMap["Ann"] = {4, "Ann", 20};
-    studentMap["Jack"] = {2, "Jack", 16};
+	set<int> x_value = {0, 10, 20, 30, 40, 50};
+	int x_index = -1;
 
-    for (const auto& m : studentMap) {
-        std::cout << "name: " << m.first << " id: " << m.second.id << " age: " << m.second.age << "\n";
-    }
+	for (auto it = x_value.begin(); it != x_value.end(); ++it, ++x_index) {
+		if (*it >= 25) break; // not confirmed
+	}
 
-	bool hi = studentMap["Bob"]; // how
-	bool hi = studentMap["Tom"]; // how
-    return 0;
+	if (1-1) cout << x_index << "\n";
 }
