@@ -26,16 +26,12 @@ public:
 	vector<Edge> orderedMTs;
 
 	vector<Point> path;
-	// vector<Net> allNets;
-	set<Net> totalNets;
-	vector<Edge> allOrderedMTs;
 
 	Edge bBox;
 	void getBBox();
 	int bBoxArea() const;
 	int bBoxHPWL() const;
 
-	void ParserAllNets(int const &testCase, Chip const &chip);
 	Net copyConstr() const;
 	Net getSoleNet(int const &ID) const;
 	void setOrderedMTs();
@@ -45,6 +41,7 @@ public:
 
 class Net_Manager {
 public:
+	Net_Manager() {}
 	int max_net_num = 0;
 	vector<Net> totalNets;
 	vector<Edge> allOrderedMTs;

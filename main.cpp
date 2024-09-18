@@ -11,7 +11,7 @@ void outputToCSV(
 	const string &block,
 	const string &must_through,
 	const string &_net,
-	Chip &chip, Net net, int id = 9999
+	Chip &chip, Net_Manager net, int id = 9999
 ) {
 	std::ofstream file_block(block);
     file_block << "group,x,y,is_feed\n";
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
 	int testCase = 4;
 
 	Chip chip(testCase);
-	Net net;
+	Net_Manager net;
 	net.ParserAllNets(testCase, chip);
 	
 	int tracks_um = std::stoi(argv[1]);

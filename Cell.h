@@ -13,7 +13,7 @@ using std::shared_ptr;
 using std::pair;
 
 class Chip;
-class Net;
+class Net_Manager;
 
 class Cell : public std::enable_shared_from_this<Cell> {
 public:
@@ -55,7 +55,7 @@ public:
 	map<int, map<int, shared_ptr<Cell>>> cells;
 	void setXYvalue(set<int>, set<int>);
 	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, int, Point);
-	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, const Net);
+	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, const Net_Manager);
 	shared_ptr<Cell> cellEnclose(const Point&);
 	set<shared_ptr<Cell>> cellsOnVertex(const Point&);
 	set<shared_ptr<Cell>> getNeighbor(const shared_ptr<Cell>&);

@@ -22,13 +22,13 @@ using std::regex;
 using std::sregex_iterator;
 using namespace rapidjson;
 
-class Net;
+class Net_Manager;
 
 class Chip : public Zone {
 public:
 	Chip() {}
 	Chip(int const &testCase);
-	void initializeAllCell(const Net&);
+	void initializeAllCell(const Net_Manager&);
 
 	Point border;
 	int UNITS_DISTANCE_MICRONS;

@@ -17,7 +17,7 @@ Net Net::copyConstr() const {
 	return std::move(theCopied);
 }
 
-void Net::ParserAllNets (int const &testCase, Chip const &chip) {
+void Net_Manager::ParserAllNets (int const &testCase, Chip const &chip) {
 	const int UDM = chip.UNITS_DISTANCE_MICRONS;
 	const string TESTCASE = std::to_string(testCase);
 	std::ifstream file("cad_case0" + TESTCASE + "/case0" + TESTCASE + ".json");
@@ -115,7 +115,7 @@ void Net::ParserAllNets (int const &testCase, Chip const &chip) {
 		}
 		// 50 57 1014, 1014 interesting
 		// allNets.push_back(tempNet);
-		totalNets.insert(std::move(tempNet));
+		totalNets.push_back(std::move(tempNet));
 	}
 	file.close();
 	return;
@@ -138,7 +138,7 @@ void insertEdgeCoords2Set(set<int> &x_value, set<int> &y_value, const Edge &e) {
 	return;
 }
 
-void Chip::initializeAllCell(const Net &net) {
+void Chip::initializeAllCell(const Net_Manager &net) {
 	set<int> x_value, y_value;
 
 	for (size_t i = 0; i < allEdges.size(); ++i) insertEdgeCoords2Set(x_value, y_value, allEdges[i]);
@@ -158,7 +158,7 @@ void Cell_Manager::createCells(
 	const vector<shared_ptr<Block>> &allBlocks,
 	const vector<Edge> &allBPRs,
 	const vector<shared_ptr<EdgeNetNum>> &allTBENNs,
-	const Net net
+	const Net_Manager net
 ) {
 	int x_count = 0;
 	for (auto x1 = x_value.begin(); x1 != x_value.end(); ++x1) {
