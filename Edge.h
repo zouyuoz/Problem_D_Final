@@ -12,7 +12,7 @@ using std::shared_ptr;
 
 class Block;
 
-class Edge {
+class Edge : public std::enable_shared_from_this<Edge> {
 public:
 	Edge(): first(), second() {}
 	Edge(bool v, Pair r, int f, shared_ptr<Block> b): block(b) {
@@ -26,6 +26,12 @@ public:
 	Edge(Point First, Point Second, shared_ptr<Block> b): block(b) {
 		first = First < Second ? First : Second;
 		second = First < Second ? Second : First;
+	}
+	Edge(const Edge& other) {
+		first = other.first;
+		second = other.second;
+		block = other.block;
+		netID = other.netID;
 	}
 
 	Point first, second;

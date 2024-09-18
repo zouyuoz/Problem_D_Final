@@ -6,7 +6,7 @@
 
 using std::abs;
 
-const bool Log = 1;
+const bool Log = 0;
 
 bool Node::operator <(const Node &other) const {
 	// future add if has mt, have higher priority
@@ -107,13 +107,11 @@ vector<Point> A_star_algorithm::getPath(const Net &net) {
 // (if is originally not throughable)
 // after find a path, check if all the mt in MTs are included
 // if no, redo algorithm, else export this path
-set<shared_ptr<Cell>> A_star_algorithm::fromMTGetCells(const Edge &mt) {
-	set<shared_ptr<Cell>> MTCells;
+shared_ptr<Cell> A_star_algorithm::fromMTGetCells(const Edge &mt) {
 
 	if (mt.first == mt.second) {
 		// handle single terminal cell (maybe target cell)
-		MTCells.insert(allCells.cellEnclose(mt.first));
-		return MTCells;
+		return allCells.cellEnclose(mt.first);
 	}
 
 	auto edgeCell_1_candidates = allCells.cellsOnVertex(mt.first);
@@ -129,17 +127,25 @@ set<shared_ptr<Cell>> A_star_algorithm::fromMTGetCells(const Edge &mt) {
 
 	int xIndex_1 = edgeCell_1->xIndex, yIndex_1 = edgeCell_1->yIndex;
 	int xIndex_2 = edgeCell_2->xIndex, yIndex_2 = edgeCell_2->yIndex;
+	// if (xIndex_1 == xIndex_2) {
+	// 	// means this port is vertical
+	// 	int yMin = std::min(yIndex_1, yIndex_2), yMax = std::max(yIndex_1, yIndex_2);
+	// 	for (int y = yMin; y <= yMax; ++y) { MTCells.insert(allCells.cells[xIndex_1][y]); }
+	// } else if (yIndex_1 == yIndex_2) {
+	// 	// means this port is horizontal
+	// 	int xMin = std::min(xIndex_1, xIndex_2), xMax = std::max(xIndex_1, xIndex_2);
+	// 	for (int x = xMin; x <= xMax; ++x) { MTCells.insert(allCells.cells[x][yIndex_1]); }
+	// }
 	if (xIndex_1 == xIndex_2) {
 		// means this port is vertical
-		int yMin = std::min(yIndex_1, yIndex_2), yMax = std::max(yIndex_1, yIndex_2);
-		for (int y = yMin; y <= yMax; ++y) { MTCells.insert(allCells.cells[xIndex_1][y]); }
+		int yAvg = (yIndex_1 + yIndex_2) / 2;
+		return allCells.cells[xIndex_1][yAvg];
 	} else if (yIndex_1 == yIndex_2) {
 		// means this port is horizontal
-		int xMin = std::min(xIndex_1, xIndex_2), xMax = std::max(xIndex_1, xIndex_2);
-		for (int x = xMin; x <= xMax; ++x) { MTCells.insert(allCells.cells[x][yIndex_1]); }
+		int xAvg = (xIndex_1 + xIndex_2) / 2;
+		return allCells.cells[xAvg][yIndex_1];
 	}
-
-	return MTCells;
+	return nullptr;
 }
 void A_star_algorithm::handleMTsNets(const Net &net) {
 	Point s = net.TX.coord;
@@ -348,7 +354,7 @@ shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_
 				return final;
 			}
 
-			if (!canGoNext(nowNode->cell, n, net.TX, net.RXs[0])) {
+			if (!_canGoNext(nowNode->cell, n, net.TX, net.RXs[0])) {
 				if (Log) file << "INVALID: can't go or not belong terminals\n";
 				continue;
 			}
@@ -426,41 +432,23 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	if (nowCell->inBlock()) {
 		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
 		else { // exit a block
-			// if (nowCell->block == s.block && s.name == "MTTerminal") {
-			// 	if (nowCell->someNetsMT.first.x == -99) {
-			// 		// cout << "no MT\n";
-			// 		return 0;
-			// 	}
-			// 	else {
-			// 		// cout << "nowNetMtNetID: " << nowCell->someNetsMT.netID;
-			// 		// cout << ", routingNetID: " << netID << "\n";
-			// 		return nowCell->someNetsMT.netID == netID;
-			// 	}
-			// }
-
+			if (nowCell->block == s.block) {
+				if (netID != 99 && nowCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nowCell->someNetsMT)) return 1;
+				if (netID == 99 && nowCell->block->noPort()) return 1;
+			}
 			if (nowCell->block->noPort()) {
 				if (nowCell->block->is_feedthroughable) return 1;
-				if (nowCell->block == s.block) return 1;
 			}
 		}
 	}
 	else {
 		if (nextCell->inBlock()) { // enter a block
-			// if (nextCell->block == t.block && t.name == "MTTerminal") {
-			// 	if (nextCell->someNetsMT.first.x == -99) {
-			// 		// cout << "no MT\n";
-			// 		return 0;
-			// 	}
-			// 	else {
-			// 		// cout << "nextNetMtNetID: " << nextCell->someNetsMT.netID;
-			// 		// cout << ", routingNetID: " << netID << "\n";
-			// 		return nextCell->someNetsMT.netID == netID;
-			// 	}
-			// }
-
+			if (nextCell->block == t.block) {
+				if (netID != 99 && nextCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nextCell->someNetsMT)) return 1;
+				if (netID == 99 && nextCell->block->noPort()) return 1;
+			}
 			if (nextCell->block->noPort()) {
 				if (nextCell->block->is_feedthroughable) return 1;
-				if (nextCell->block == t.block) return 1;
 			}
 		}
 		else return 1;
@@ -481,6 +469,42 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	} else return !(nowCell->inBlock());						// can go to channels (no block)
 	return nowCell->block == nextCell->block;					// if in the same block, then can go, else can't
 	*/
+}
+
+bool A_star_algorithm::_canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> nextCell, Terminal s, Terminal t) {
+	if (!nextCell->valid()) return 0;							// can't go to an invalid cell, no matter what
+	if (nowCell->isBPR() || nextCell->isBPR()) {				// BPR cells could be passable
+		// direction should be considered
+		Edge BPR = nowCell->isBPR() ? nowCell->BPR : nextCell->BPR;
+		if (directionIntoPort(nowCell, nextCell, BPR)) return 1;
+	}
+	if ((bool)nowCell->TBENN || (bool)nextCell->TBENN) {		// TBENN cells could be passable
+		// direction should be considered
+		auto TBENN = (bool)nowCell->TBENN ? nowCell->TBENN : nextCell->TBENN;
+		Edge e = TBENN->edge;
+		if (directionIntoPort(nowCell, nextCell, e)) return 1;
+	}
+
+	if (nowCell->inBlock()) {
+		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
+		else { // exit a block
+			if (nowCell->block->noPort()) {
+				if (nowCell->block->is_feedthroughable) return 1;
+				if (nowCell->block == s.block) return 1;
+			}
+		}
+	}
+	else {
+		if (nextCell->inBlock()) { // enter a block
+			if (nextCell->block->noPort()) {
+				if (nextCell->block->is_feedthroughable) return 1;
+				if (nextCell->block == t.block) return 1;
+			}
+		}
+		else return 1;
+	}
+
+	return 0;
 }
 
 bool A_star_algorithm::directionIntoPort(shared_ptr<Cell> nowCell, shared_ptr<Cell> nextCell, const Edge& e) {
@@ -527,14 +551,8 @@ void A_star_algorithm::backTraceFinalPath(shared_ptr<Node> &final, Point s, Poin
 
 void A_star_algorithm::monotonicPath(Point s, Point t) {
 	bool isStraight = s.x == t.x || s.y == t.y;
-	if (isStraight) {
-		path.push_back(s);
-		path.push_back(t);
-		return;
-	}
-	cout << "not straight";
 	path.push_back(s);
-	path.push_back(Point(s.x, t.y));
+	if (!isStraight) path.push_back(Point(s.x, t.y));
 	path.push_back(t);
 	return;
 }

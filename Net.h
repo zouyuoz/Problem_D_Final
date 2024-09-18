@@ -25,7 +25,7 @@ public:
 	vector<Edge> HMFT_MUST_THROUGHs;
 	vector<Edge> orderedMTs;
 
-	vector<Point> allNodes;
+	vector<Point> path;
 	// vector<Net> allNets;
 	set<Net> totalNets;
 	vector<Edge> allOrderedMTs;
@@ -46,7 +46,7 @@ public:
 class Net_Manager {
 public:
 	int max_net_num = 0;
-	set<Net> totalNets;
+	vector<Net> totalNets;
 	vector<Edge> allOrderedMTs;
 
 	void ParserAllNets(int const &testCase, Chip const &chip);

@@ -108,7 +108,7 @@ void outputNet(vector<Point> path) {
 }
 
 int main(int argc, char* argv[]) {
-	int testCase = 2;
+	int testCase = 4;
 
 	Chip chip(testCase);
 	Net net;
@@ -134,24 +134,9 @@ int main(int argc, char* argv[]) {
 		// if (n.ID != findNet && 1) continue;
 		++count;
 		cout << n.ID << ":\tbBox: " << n.bBoxArea() << "\t(" << count << " / " << totalAmount << ")\t";
-		// if (n.ID != findNet && 1) continue;
-		// bool isForbid = std::find(forbid.begin(), forbid.end(), n.ID) != forbid.end();
-		// if (isForbid) { cout << "\n" << n; }
-		// else break;
-		// cout << n;
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
 		outputNet(PATH);
-		// if (n.ID >= findNet) break;
-
-		// for (size_t i = 0; i < n.RXs.size(); ++i) {
-		// 	if (1) cout << "\t";
-		// 	Net sole_n = n.getSoleNet(i);
-		// 	auto PATH = algorithm.getPath_(sole_n);
-		// 	if (!PATH.size()) forbiddens.insert(n.ID);
-		// 	outputNet(PATH);
-		// }
-
 		// if (n.ID >= findNet) break;
 	}
 

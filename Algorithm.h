@@ -54,9 +54,10 @@ public:
 	shared_ptr<Node> findPath(shared_ptr<Node>, const Edge&, int);
 	shared_ptr<Node> findPath(shared_ptr<Node>, shared_ptr<Cell>, const Net&);
 
-	set<shared_ptr<Cell>> fromMTGetCells(const Edge&);
+	shared_ptr<Cell> fromMTGetCells(const Edge&);
 
 	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, Terminal, Terminal, int ID = -99);
+	bool _canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, Terminal, Terminal);
 	bool directionIntoPort(shared_ptr<Cell>, shared_ptr<Cell>, const Edge&);
 	void backTraceFinalPath(shared_ptr<Node>&, Point, Point);
 	void monotonicPath(Point, Point);
