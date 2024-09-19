@@ -63,14 +63,14 @@ void outputToCSV(
 		d.close();
 	}
 
-	// std::ofstream file_net(_net);
-	// file_net << "x1,y1,x2,y2\n";
+	std::ofstream file_net(_net);
+	file_net << "x1,y1,x2,y2\n";
 
 	file_mt.close();
     cout << "Data written to " << must_through << "\n";
 
-	// file_net.close();
-    // cout << "Data written to " << _net << "\n";
+	file_net.close();
+    cout << "Data written to " << _net << "\n";
 }
 
 void outputCell(string const &file, Cell_Manager cell) {
@@ -134,7 +134,9 @@ int main(int argc, char* argv[]) {
 		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;
-		if (!(n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size())) continue;
+
+		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) continue;
+		else if (n.RXs.size() > 1) continue;;
 
 		cout << n.ID << ":\tbBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ") ";
 		auto PATH = algorithm.getPath(n);

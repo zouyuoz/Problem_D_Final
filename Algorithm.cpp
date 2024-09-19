@@ -598,7 +598,7 @@ shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_
 				return final;
 			}
 
-			if (!_canGoNext(nowNode->cell, n, net.TX, net.RXs[0])) {
+			if (!canGoNext(nowNode->cell, n, net)) {
 				if (Log) file << "INVALID: can't go or not belong terminals\n";
 				continue;
 			}
