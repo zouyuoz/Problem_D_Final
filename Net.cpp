@@ -185,12 +185,6 @@ void Cell_Manager::createCells(
 					tempCell.someNetsMTs.push_back(e);
 				}
 			}
-			// if (tempCell.someNetsMTs.size() > 1) {
-			// 	cout << "\n";
-			// 	for (auto const &e: tempCell.someNetsMTs) {
-			// 		cout << e.block->name << " : " << e.netID << "\n";
-			// 	}
-			// }
 			tempCell.xIndex = x_count;
 			tempCell.yIndex = ++y_count;
 			cells[x_count][y_count] = std::make_shared<Cell>(tempCell);

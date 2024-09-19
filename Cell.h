@@ -65,7 +65,7 @@ class Terminal {
 public:
 	Terminal() {}
 	Terminal(string Name, Point Coord): name(Name), coord(Coord) {}
-	Terminal(shared_ptr<Block> b): name("MTTerminal"), coord(Point(0,0)), block(b) {}
+	Terminal(shared_ptr<Block> b): name(b->name), coord(Point(0,0)), block(b) {}
 	// Terminal(Terminal const &other) {
 	// 	name = other.name;
 	// 	coord = other.coord;

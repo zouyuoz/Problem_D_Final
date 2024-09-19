@@ -48,15 +48,17 @@ public:
 	vector<Point> path;
 
 	vector<Point> getPath(const Net &net);
-	void handleRXsNets(const Net &net);
-	void handleMTsNets(const Net &net);
+	void handleMultRXNets(const Net &net);
+	void handleHasMTsNets(const Net &net);
 	void handleNormalNets(const Net &net);
 	shared_ptr<Node> findPath(shared_ptr<Node>, const Edge&, int);
 	shared_ptr<Node> findPath(shared_ptr<Node>, shared_ptr<Cell>, const Net&);
+	shared_ptr<Node> findPath_HasMTs(shared_ptr<Node>, shared_ptr<Cell>, const Net&);
 
 	shared_ptr<Cell> fromMTGetCells(const Edge&);
 
 	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, Terminal, Terminal, int ID = -99);
+	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, const Net&);
 	bool _canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, Terminal, Terminal);
 	bool directionIntoPort(shared_ptr<Cell>, shared_ptr<Cell>, const Edge&);
 	void backTraceFinalPath(shared_ptr<Node>&, Point, Point);

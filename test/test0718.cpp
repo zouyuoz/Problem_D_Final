@@ -1,13 +1,16 @@
+#include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <memory>
+
 
 
 class MyClass {
 public:
     MyClass(int v) : value(v) {}
     MyClass(const MyClass& other) : value(other.value) {
-        std::cout << "Copy constructor called" << std::endl;
+        // std::cout << "Copy constructor called" << std::endl;
     }
 
 	void setValue(int const &val) { value = val; }
@@ -19,13 +22,22 @@ private:
 using namespace std;
 
 int main() {
-	vector<MyClass> b;
-	{
-    vector<MyClass> a = { MyClass(8), MyClass(9), MyClass(7), MyClass(2), MyClass(4) };
-	b = std::move(a);
+
+	vector<int> vec = {1, 3, 5, 7, 9};
+	while (vec.size()) {
+		int a = rand() % 10;
+		for (auto it = vec.begin(); it != vec.end(); ++it){
+			if (*it == a) {
+				vec.erase(it);
+				break;
+			}
+		}
+		cout << "vec_size: " << vec.size() << ": ";
+		for (size_t i = 0; i < vec.size(); ++i) {
+			cout << vec[i] << " ";
+		}
+		cout << "\n";
 	}
-	for (auto const &t : b) { cout << t.display(); }
-	//for (auto const &t : b) { cout << t.display(); }
 
     return 0;
 }

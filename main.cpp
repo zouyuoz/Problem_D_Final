@@ -119,23 +119,23 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 1151; // 1014 1016
+	int findNet = 312; // 1014 1016
 	int count = 0;
+	int countMTs = 0;
+	int countRXs = 0;
 	int totalAmount = net.totalNets.size();
 	set<int> forbiddens;
-
-	return 0;
 
 	outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
 	outputCell("zzp.csv", chip.allCells);
 
 	for (Net const &n : net.totalNets) {
-		// if (n.ID != findNet) continue;
-		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) continue;
-		if (n.RXs.size() > 1) continue;
-		// if (n.ID != findNet && 1) continue;
-		++count;
-		cout << n.ID << ":\tbBox: " << n.bBoxArea() << "\t(" << count << " / " << totalAmount << ")\t";
+		if (n.ID != findNet) continue;
+		// if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) ++countMTs;
+		// else if (n.RXs.size() > 1) ++countRXs;
+		// else ++count;
+
+		cout << n.ID << ":\tbBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ") ";
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
 		outputNet(PATH);
@@ -146,8 +146,13 @@ int main(int argc, char* argv[]) {
 	for (const int &f: forbiddens) cout << f << ", ";
 	cout << "\b\b\n";
 
+	// cout << "normal: " << count;
+	// cout << "\nMTs: " << countMTs;
+	// cout << "\nRXs: " << countRXs;
+	// cout << "\ntotal: " << totalAmount;
+
 	int pathFoundNum = count - forbiddens.size();
-	cout << "Path found: " << pathFoundNum << " / " << count << "\n";
+	cout << "\nPath found: " << pathFoundNum << " / " << count << "\n";
 	cout << "Found rate: " << std::fixed << std::setprecision(2);
 	cout << (float)pathFoundNum * 100 / count << "%";
 	
