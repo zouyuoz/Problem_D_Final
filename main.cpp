@@ -45,12 +45,11 @@ void outputToCSV(
 	}
 
 	if (id != 9999) {
+		std::ofstream d("zzi.csv");
+		d << "x,y\n";
 		for (const auto &n: net.totalNets) {
-			if (n.ID != id) continue;
-			std::ofstream d("zzi.csv");
-			d << "x,y\n";
+			// if (n.ID != id) continue;
 			d << n.TX.coord.x << "," << n.TX.coord.y << "\n" << n.RXs[0].coord.x << "," << n.RXs[0].coord.y << "\n";
-			d.close();
 			for (auto const &MT: n.MUST_THROUGHs) {
 				auto mt = MT;
 				file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",3\n";
@@ -59,18 +58,19 @@ void outputToCSV(
 				auto mt = MT;
 				file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",3\n";
 			}
-			if (n.ID == id) break;
+			// if (n.ID == id) break;
 		}
+		d.close();
 	}
 
-	std::ofstream file_net(_net);
-	file_net << "x1,y1,x2,y2\n";
+	// std::ofstream file_net(_net);
+	// file_net << "x1,y1,x2,y2\n";
 
 	file_mt.close();
     cout << "Data written to " << must_through << "\n";
 
-	file_net.close();
-    cout << "Data written to " << _net << "\n";
+	// file_net.close();
+    // cout << "Data written to " << _net << "\n";
 }
 
 void outputCell(string const &file, Cell_Manager cell) {
@@ -108,7 +108,7 @@ void outputNet(vector<Point> path) {
 }
 
 int main(int argc, char* argv[]) {
-	int testCase = 2;
+	int testCase = 0;
 
 	Chip chip(testCase);
 	Net_Manager net;
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 312; // 1014 1016
+	int findNet = 3; // 1014 1016
 	int count = 0;
 	int countMTs = 0;
 	int countRXs = 0;
@@ -130,10 +130,11 @@ int main(int argc, char* argv[]) {
 	outputCell("zzp.csv", chip.allCells);
 
 	for (Net const &n : net.totalNets) {
-		if (n.ID != findNet) continue;
-		// if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) ++countMTs;
-		// else if (n.RXs.size() > 1) ++countRXs;
-		// else ++count;
+		// if (n.ID != findNet) continue;
+		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) ++countMTs;
+		else if (n.RXs.size() > 1) ++countRXs;
+		else ++count;
+		if (!(n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size())) continue;
 
 		cout << n.ID << ":\tbBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ") ";
 		auto PATH = algorithm.getPath(n);
@@ -146,10 +147,10 @@ int main(int argc, char* argv[]) {
 	for (const int &f: forbiddens) cout << f << ", ";
 	cout << "\b\b\n";
 
-	// cout << "normal: " << count;
-	// cout << "\nMTs: " << countMTs;
-	// cout << "\nRXs: " << countRXs;
-	// cout << "\ntotal: " << totalAmount;
+	cout << "normal: " << count;
+	cout << "\nMTs: " << countMTs;
+	cout << "\nRXs: " << countRXs;
+	cout << "\ntotal: " << totalAmount;
 
 	int pathFoundNum = count - forbiddens.size();
 	cout << "\nPath found: " << pathFoundNum << " / " << count << "\n";

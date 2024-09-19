@@ -322,29 +322,27 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	if (nowCell->inBlock()) {
 		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
 		else { // exit a block
+			bool isLeavingMTBlock = 0;
 			for (const auto &netMt: net.orderedMTs) {
-				if (nowCell->block != netMt.block || !nowCell->isSomeNetsMT()) continue;
-				for (const auto &cellMt: nowCell->someNetsMTs) {
-					if (cellMt == netMt && cellMt.netID == net.ID) {
-						if (directionIntoPort(nowCell, nextCell, cellMt)) return 1;
-					}
+				if (nowCell->block == netMt.block) {
+					isLeavingMTBlock = 1;
+					cout << "leaving MT " << netMt.block->name << "...";
+					break;
 				}
 			}
-			// bool isLeavingMTBlock = 0;
-			// for (const auto &netMt: net.orderedMTs) {
-			// 	if (nowCell->block == netMt.block) {
-			// 		isLeavingMTBlock = 1;
-			// 		break;
-			// 	}
-			// }
-			// if (isLeavingMTBlock) {
-			// 	for (const auto &cellMt: nowCell->someNetsMTs) {
-			// 		if (cellMt.netID == net.ID) {
-			// 			if (directionIntoPort(nowCell, nextCell, cellMt)) return 1;
-			// 		}
-			// 	}
-			// 	return 0;
-			// }
+			if (isLeavingMTBlock) {
+				for (const auto &cellMt: nowCell->someNetsMTs) {
+					cout << "\n - cell MT net ID: " << cellMt.netID;
+					if (cellMt.netID == net.ID) {
+						if (directionIntoPort(nowCell, nextCell, cellMt)) {
+							cout << " yes leaving peace\n";
+							return 1;
+						}
+					}
+				}
+				cout << "can't leave this block\n";
+				return 0;
+			}
 			if (nowCell->block->noPort()) {
 				if (nowCell->block->is_feedthroughable) return 1;
 				if (nowCell->block == net.TX.block) return 1;
@@ -353,13 +351,26 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	}
 	else {
 		if (nextCell->inBlock()) { // enter a block
+			bool isLeavingMTBlock = 0;
 			for (const auto &netMt: net.orderedMTs) {
-				if (nextCell->block != netMt.block || !nextCell->isSomeNetsMT()) continue;
+				if (nextCell->block == netMt.block) {
+					isLeavingMTBlock = 1;
+					cout << "entering MT " << netMt.block->name << "...";
+					break;
+				}
+			}
+			if (isLeavingMTBlock) {
 				for (const auto &cellMt: nextCell->someNetsMTs) {
-					if (cellMt == netMt && cellMt.netID == net.ID) {
-						if (directionIntoPort(nowCell, nextCell, cellMt)) return 1;
+					cout << "\n - cell MT net ID: " << cellMt.netID;
+					if (cellMt.netID == net.ID) {
+						if (directionIntoPort(nowCell, nextCell, cellMt)) {
+							cout << " yes entering peace\n";
+							return 1;
+						}
 					}
 				}
+				cout << "can't enter this block\n";
+				return 0;
 			}
 			if (nextCell->block->noPort()) {
 				if (nextCell->block->is_feedthroughable) return 1;
