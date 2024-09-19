@@ -53,6 +53,10 @@ public:
 		netID = other.netID;
 		return *this;
 	}
+	friend std::ostream& operator <<(std::ostream &os, const Edge &e) {
+		os << "(" << e.first.x << ", " << e.first.y << "),(" << e.second.x << ", " << e.second.x << ")";
+		return os; 
+	}
 };
 
 #endif // EDGE_H_INCLUDED

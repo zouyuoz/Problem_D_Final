@@ -108,7 +108,7 @@ void outputNet(vector<Point> path) {
 }
 
 int main(int argc, char* argv[]) {
-	int testCase = 4;
+	int testCase = 2;
 
 	Chip chip(testCase);
 	Net_Manager net;
@@ -123,6 +123,8 @@ int main(int argc, char* argv[]) {
 	int count = 0;
 	int totalAmount = net.totalNets.size();
 	set<int> forbiddens;
+
+	return 0;
 
 	outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
 	outputCell("zzp.csv", chip.allCells);

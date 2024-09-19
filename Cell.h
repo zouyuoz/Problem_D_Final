@@ -31,9 +31,9 @@ public:
 	bool valid() { return 1; /*TODO*/ }
 	Edge BPR;
 	shared_ptr<EdgeNetNum> TBENN;
-	Edge someNetsMT;
+	vector<Edge> someNetsMTs;
 	bool isBPR() { return BPR.first.x != -99; }
-	// bool isSomeNetsMT() { return (bool)someNetsMT; }
+	bool isSomeNetsMT() { return someNetsMTs.size(); }
 
     bool enclose(const Point&);
 	void checkInsideBlock(vector<shared_ptr<Block>>);

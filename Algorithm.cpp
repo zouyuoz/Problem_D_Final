@@ -218,7 +218,7 @@ shared_ptr<Node> A_star_algorithm::findPath(
 			// 	auto m = n->someNetsMT;
 			// 	cout << m.first.x << ", " << m.first.y << ", " << m.second.x << ", " << m.second.y << "\n";
 			// }
-			if (n->someNetsMT == mt) {
+			if (n->someNetsMTs[0] == mt) { // TODO
 				cout << "probably?\n";
 				// need to check the direction is right, TODO!
 				if (directionIntoPort(nowNode->cell, n, mt)) {
@@ -292,8 +292,13 @@ shared_ptr<Node> A_star_algorithm::findPath(
 // maybe we could try this method and the old one
 // and compare which one is more optimized
 void A_star_algorithm::handleRXsNets(const Net &net) {
-	int RX_count = net.RXs.size();
-	return;
+	set<shared_ptr<Cell>> targetCells;
+	for (const auto &rx: net.RXs) {
+		targetCells.insert(allCells.cellEnclose(rx.coord));
+	}
+	Point s = net.TX.coord;
+	shared_ptr<Node> sourceNode = make_shared<Node>(allCells.cellEnclose(s));
+	
 }
 
 void A_star_algorithm::handleNormalNets(const Net &net) {
@@ -433,7 +438,7 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
 		else { // exit a block
 			if (nowCell->block == s.block) {
-				if (netID != 99 && nowCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nowCell->someNetsMT)) return 1;
+				// if (netID != 99 && nowCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nowCell->someNetsMT)) return 1;
 				if (netID == 99 && nowCell->block->noPort()) return 1;
 			}
 			if (nowCell->block->noPort()) {
@@ -444,7 +449,7 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	else {
 		if (nextCell->inBlock()) { // enter a block
 			if (nextCell->block == t.block) {
-				if (netID != 99 && nextCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nextCell->someNetsMT)) return 1;
+				// if (netID != 99 && nextCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nextCell->someNetsMT)) return 1;
 				if (netID == 99 && nextCell->block->noPort()) return 1;
 			}
 			if (nextCell->block->noPort()) {

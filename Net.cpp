@@ -182,12 +182,14 @@ void Cell_Manager::createCells(
 			}
 			for (auto const &e: net.allOrderedMTs) {
 				if (tempCell.EdgeBelongs2Cell(e)) {
-					tempCell.someNetsMT = e;
-					// if (tempCell.someNetsMT.block->name == "BLOCK_11") cout << tempCell.someNetsMT.netID << "\n";
+					tempCell.someNetsMTs.push_back(e);
 				}
 			}
-			// if (tempCell.someNetsMT.block) {
-			// 	if (tempCell.someNetsMT.block->name == "BLOCK_11") cout << " : " << tempCell.someNetsMT.netID << "\n";
+			// if (tempCell.someNetsMTs.size() > 1) {
+			// 	cout << "\n";
+			// 	for (auto const &e: tempCell.someNetsMTs) {
+			// 		cout << e.block->name << " : " << e.netID << "\n";
+			// 	}
 			// }
 			tempCell.xIndex = x_count;
 			tempCell.yIndex = ++y_count;
@@ -195,16 +197,6 @@ void Cell_Manager::createCells(
 		}
 		++x_count;
     }
-	// cout << "finished create\n";
-	// for (const auto &out: cells) {
-	// 	for (const auto &inner: out.second) {
-	// 		const auto c = inner.second;
-	// 		if (c->inBlock() == false) continue;
-	// 		if (c->block->name == "BLOCK_11") {
-	// 			if (c) cout << c->someNetsMT->netID << "\n";
-	// 		}
-	// 	}
-	// }
 }
 
 /*=======================================*/

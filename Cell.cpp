@@ -42,7 +42,7 @@ Cell::Cell(const Cell& other):
 	node(other.node),
 	BPR(other.BPR),
 	TBENN(other.TBENN),
-	someNetsMT(other.someNetsMT)
+	someNetsMTs(other.someNetsMTs)
 {}
 
 Cell& Cell::operator =(const Cell& other) {
@@ -55,7 +55,7 @@ Cell& Cell::operator =(const Cell& other) {
         node = other.node;
         BPR = other.BPR;
         TBENN = other.TBENN;
-        someNetsMT = other.someNetsMT;
+        someNetsMTs = other.someNetsMTs;
     }
     return *this;
 }
