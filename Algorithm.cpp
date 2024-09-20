@@ -1,5 +1,6 @@
 #include "Algorithm.h"
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <memory>
 #include <utility>
@@ -123,23 +124,21 @@ shared_ptr<Cell> A_star_algorithm::fromMTGetCells(const Edge &mt) {
 	shared_ptr<Cell> edgeCell_1, edgeCell_2;
 
 	for (auto &cell: edgeCell_1_candidates) {
-		if (cell->EdgeBelongs2Cell(mt)) { edgeCell_1 = cell; break; }
+		if (cell->EdgeBelongs2Cell(mt)) {
+			edgeCell_1 = cell;
+			break;
+		}
 	}
 	for (auto &cell: edgeCell_2_candidates) {
-		if (cell->EdgeBelongs2Cell(mt)) { edgeCell_2 = cell; break; }
+		if (cell->EdgeBelongs2Cell(mt)) {
+			edgeCell_2 = cell;
+			break;
+		}
 	}
 
 	int xIndex_1 = edgeCell_1->xIndex, yIndex_1 = edgeCell_1->yIndex;
 	int xIndex_2 = edgeCell_2->xIndex, yIndex_2 = edgeCell_2->yIndex;
-	// if (xIndex_1 == xIndex_2) {
-	// 	// means this port is vertical
-	// 	int yMin = std::min(yIndex_1, yIndex_2), yMax = std::max(yIndex_1, yIndex_2);
-	// 	for (int y = yMin; y <= yMax; ++y) { MTCells.insert(allCells.cells[xIndex_1][y]); }
-	// } else if (yIndex_1 == yIndex_2) {
-	// 	// means this port is horizontal
-	// 	int xMin = std::min(xIndex_1, xIndex_2), xMax = std::max(xIndex_1, xIndex_2);
-	// 	for (int x = xMin; x <= xMax; ++x) { MTCells.insert(allCells.cells[x][yIndex_1]); }
-	// }
+	
 	if (xIndex_1 == xIndex_2) {
 		// means this port is vertical
 		int yAvg = (yIndex_1 + yIndex_2) / 2;
@@ -157,6 +156,11 @@ void A_star_algorithm::handleHasMTsNets(const Net &net) {
 	shared_ptr<Cell> source = allCells.cellEnclose(s);
 	shared_ptr<Cell> target = allCells.cellEnclose(t);
 	shared_ptr<Node> sourceNode = make_shared<Node>(source); // the VERY source
+
+	for (size_t i = 0; i < net.orderedMTs.size(); ++i) {
+		auto repeaterCell = fromMTGetCells(net.orderedMTs[i]);
+		sourceNode = findPath_HasMTs(sourceNode, repeaterCell, net);
+	}
 
 	sourceNode = findPath_HasMTs(sourceNode, target, net); // TODO
 	backTraceFinalPath(sourceNode, net.TX.coord, net.RXs[0].coord);
@@ -224,14 +228,8 @@ shared_ptr<Node> A_star_algorithm::findPath_HasMTs(shared_ptr<Node> sourceNode, 
 			if (Log) file << "\tneighbor" << *n << "\t";
 			if (n == target) {
 				if (Log) file << "Path Found!\n";
-				cout << "PATH probably found...";
-
+				cout << "PATH found!\n";
 				shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
-				if (!checkPathIncludeAllMTs(final, net)) {
-					cout << ", Nah\n";
-					continue;
-				}
-				cout << "Yes!\n";
 				return final;
 			}
 
@@ -317,7 +315,9 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 			Edge e = TBENN->edge;
 			if (directionIntoPort(nowCell, nextCell, e)) return 1;
 		}
-	}	
+	}
+
+	bool showde = 1;
 
 	if (nowCell->inBlock()) {
 		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
@@ -326,21 +326,21 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 			for (const auto &netMt: net.orderedMTs) {
 				if (nowCell->block == netMt.block) {
 					isLeavingMTBlock = 1;
-					cout << "leaving MT " << netMt.block->name << "...";
+					if (showde) cout << "leaveMT " << netMt.block->name;
 					break;
 				}
 			}
 			if (isLeavingMTBlock) {
 				for (const auto &cellMt: nowCell->someNetsMTs) {
-					cout << "\n - cell MT net ID: " << cellMt.netID;
+					if (showde) cout << "\n - cellMT: " << cellMt.netID;
 					if (cellMt.netID == net.ID) {
 						if (directionIntoPort(nowCell, nextCell, cellMt)) {
-							cout << " yes leaving peace\n";
+							if (showde) cout << "...o\n";
 							return 1;
 						}
 					}
 				}
-				cout << "can't leave this block\n";
+				if (showde) cout << "...x\n";
 				return 0;
 			}
 			if (nowCell->block->noPort()) {
@@ -355,169 +355,26 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 			for (const auto &netMt: net.orderedMTs) {
 				if (nextCell->block == netMt.block) {
 					isLeavingMTBlock = 1;
-					cout << "entering MT " << netMt.block->name << "...";
+					if (showde) cout << "enterMT " << netMt.block->name;
 					break;
 				}
 			}
 			if (isLeavingMTBlock) {
 				for (const auto &cellMt: nextCell->someNetsMTs) {
-					cout << "\n - cell MT net ID: " << cellMt.netID;
+					if (showde) cout << "\n - cellMT: " << cellMt.netID;
 					if (cellMt.netID == net.ID) {
 						if (directionIntoPort(nowCell, nextCell, cellMt)) {
-							cout << " yes entering peace\n";
+							if (showde) cout << "...o\n";
 							return 1;
 						}
 					}
 				}
-				cout << "can't enter this block\n";
+				if (showde) cout << "...x\n";
 				return 0;
 			}
 			if (nextCell->block->noPort()) {
 				if (nextCell->block->is_feedthroughable) return 1;
 				if (nextCell->block == net.RXs[0].block) return 1;
-			}
-		}
-		else return 1;
-	}
-	return 0;
-}
-
-shared_ptr<Node> A_star_algorithm::findPath(
-	shared_ptr<Node> sourceNode,
-	const Edge &mt, int netID
-) {
-	// made for MTs nets
-	set<shared_ptr<Node>> Open = { sourceNode };
-	set<shared_ptr<Node>> Close;
-
-	Point t((mt.first.x + mt.second.x) / 2, (mt.first.y + mt.second.y) / 2);
-	cout << mt.first.x << ", " << mt.first.y << ", " << mt.second.x << ", " << mt.second.y << "\n";
-
-	int iter = -1;
-	std::ofstream file("log.txt");
-	if (Log) file << "Finding " << *sourceNode->cell << " --> " << t.x << ", " << t.y << "\n";
-
-	while (!Open.empty()) {
-		// find node with smallest f(n) in open
-		shared_ptr<Node> nowNode = findSmallestFValueNode(Open);
-
-		if (Log) {
-			file << "------- iter " << ++iter << " -------\n";
-			file << "nowNode(" << nowNode->cell->node.x << "," << nowNode->cell->node.y << ")\t";
-			file << "f: " << nowNode->f_value << "\n";
-		}
-
-		set<shared_ptr<Cell>> neighbors = allCells.getNeighbor(nowNode->cell);
-		for (auto &n: neighbors) {
-			if (!n) { if (Log) file << "\tINVALID: nullptr\n"; continue; }
-
-			if (Log) file << "\tneighbor" << *n << "\t";
-			// if (n->isSomeNetsMT()) {
-			// 	auto m = n->someNetsMT;
-			// 	cout << m.first.x << ", " << m.first.y << ", " << m.second.x << ", " << m.second.y << "\n";
-			// }
-			if (n->someNetsMTs[0] == mt) { // TODO
-				cout << "probably?\n";
-				// need to check the direction is right, TODO!
-				if (directionIntoPort(nowNode->cell, n, mt)) {
-					cout << "PATH found!\t";
-					cout << n->node.x << ", " << n->node.y << "\n";
-					shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
-					return final;
-				}
-				else continue;
-			}
-			Terminal sourceRepeater(sourceNode->cell->block);
-			Terminal targetRepeater(mt.block);
-			if (!canGoNext(nowNode->cell, n, sourceRepeater, targetRepeater, netID)) {
-				if (Log) file << "INVALID: can't go or not belong terminals\n";
-				continue;
-			}
-			// if (!n->capacityEnough(net.num)) continue;
-			if (Log && n->isBPR()) file << "isBPR\t";
-			if (Log) file << "SUCCESS\n";
-
-			shared_ptr<Node> neighbor = nowNode->generateNeighbor(n, file);
-			neighbor->calculate_g(nowNode);
-			neighbor->calculate_h(t);
-			neighbor->calculate_f();
-
-			bool alreadyExistInClose = 0;
-			for (const auto &close: Close) {
-				if (neighbor->cell == close->cell) {
-					if (Log) {
-						file << "\t\talreadyExistInClose\tnow_f: " << close->f_value;
-						file << "\tnew_f: " << neighbor->f_value;
-						if (neighbor->f_value < close->f_value) file << " @WEIRD";
-						file << "\n";
-					}
-					alreadyExistInClose = 1;
-					break;
-				}
-			}
-			if (alreadyExistInClose) continue;
-
-			bool alreadyExistInOpenAndNotBetter = 0;
-			for (auto it = Open.begin(); it != Open.end(); ++it) {
-				if (neighbor->cell == (*it)->cell) {
-					if (Log) file << "\t\talreadyExistInOpen\t";
-					if (Log) file << "now_f: " << (*it)->f_value << "\tnew_f: " << neighbor->f_value << "\t";
-					if (neighbor->f_value >= (*it)->f_value) {
-						if (Log) file << "notBetter\n";
-						alreadyExistInOpenAndNotBetter = 1;
-					} else {
-						if (Log) file << "isBetter\n";
-						Open.erase(it);
-					}
-					break;
-				}
-			}
-			if (alreadyExistInOpenAndNotBetter) continue;
-
-			Open.insert(neighbor);
-		}
-		Open.erase(nowNode);
-		Close.insert(nowNode);
-		if (Log) file << "End of iter " << iter << ", now have " << Open.size() << " nodes in Open\n";
-	}
-	cout << "PATH NOT found!\n";
-	return nullptr;
-}
-
-bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> nextCell, Terminal s, Terminal t, int netID) {
-	if (!nextCell->valid()) return 0;							// can't go to an invalid cell, no matter what
-	if (nowCell->isBPR() || nextCell->isBPR()) {				// BPR cells could be passable
-		// direction should be considered
-		Edge BPR = nowCell->isBPR() ? nowCell->BPR : nextCell->BPR;
-		if (directionIntoPort(nowCell, nextCell, BPR)) return 1;
-	}
-	if ((bool)nowCell->TBENN || (bool)nextCell->TBENN) {		// TBENN cells could be passable
-		// direction should be considered
-		auto TBENN = (bool)nowCell->TBENN ? nowCell->TBENN : nextCell->TBENN;
-		Edge e = TBENN->edge;
-		if (directionIntoPort(nowCell, nextCell, e)) return 1;
-	}
-
-	if (nowCell->inBlock()) {
-		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
-		else { // exit a block
-			if (nowCell->block == s.block) {
-				// if (netID != 99 && nowCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nowCell->someNetsMT)) return 1;
-				if (netID == 99 && nowCell->block->noPort()) return 1;
-			}
-			if (nowCell->block->noPort()) {
-				if (nowCell->block->is_feedthroughable) return 1;
-			}
-		}
-	}
-	else {
-		if (nextCell->inBlock()) { // enter a block
-			if (nextCell->block == t.block) {
-				// if (netID != 99 && nextCell->someNetsMT.netID == netID && directionIntoPort(nowCell, nextCell, nextCell->someNetsMT)) return 1;
-				if (netID == 99 && nextCell->block->noPort()) return 1;
-			}
-			if (nextCell->block->noPort()) {
-				if (nextCell->block->is_feedthroughable) return 1;
 			}
 		}
 		else return 1;
@@ -713,6 +570,7 @@ void A_star_algorithm::backTraceFinalPath(shared_ptr<Node> &final, Point s, Poin
 		if (theNode->direction != nowDirection) {
 			++turn_num;
 			path.push_back(theNode->cell->node);
+			auto p = theNode->cell->node;
 			nowDirection = theNode->direction;
 			s_direction = theNode->direction;
 		}

@@ -48,7 +48,7 @@ void outputToCSV(
 		std::ofstream d("zzi.csv");
 		d << "x,y\n";
 		for (const auto &n: net.totalNets) {
-			// if (n.ID != id) continue;
+			if (n.ID != id) continue;
 			d << n.TX.coord.x << "," << n.TX.coord.y << "\n" << n.RXs[0].coord.x << "," << n.RXs[0].coord.y << "\n";
 			for (auto const &MT: n.MUST_THROUGHs) {
 				auto mt = MT;
@@ -58,7 +58,7 @@ void outputToCSV(
 				auto mt = MT;
 				file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",3\n";
 			}
-			// if (n.ID == id) break;
+			if (n.ID == id) break;
 		}
 		d.close();
 	}
@@ -108,7 +108,7 @@ void outputNet(vector<Point> path) {
 }
 
 int main(int argc, char* argv[]) {
-	int testCase = 0;
+	int testCase = 2;
 
 	Chip chip(testCase);
 	Net_Manager net;
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 3; // 1014 1016
+	int findNet = 1014; // 1014 1016
 	int count = 0;
 	int countMTs = 0;
 	int countRXs = 0;
@@ -130,13 +130,12 @@ int main(int argc, char* argv[]) {
 	outputCell("zzp.csv", chip.allCells);
 
 	for (Net const &n : net.totalNets) {
-		// if (n.ID != findNet) continue;
+		if (n.ID != findNet) continue;
 		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;
 
-		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) continue;
-		else if (n.RXs.size() > 1) continue;;
+		if (!(n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size())) continue;
 
 		cout << n.ID << ":\tbBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ") ";
 		auto PATH = algorithm.getPath(n);

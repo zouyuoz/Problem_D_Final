@@ -57,7 +57,6 @@ public:
 
 	shared_ptr<Cell> fromMTGetCells(const Edge&);
 
-	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, Terminal, Terminal, int ID = -99);
 	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, const Net&);
 	bool _canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, Terminal, Terminal);
 	bool directionIntoPort(shared_ptr<Cell>, shared_ptr<Cell>, const Edge&);
