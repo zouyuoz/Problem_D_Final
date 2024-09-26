@@ -57,7 +57,8 @@ public:
 	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, int, Point);
 	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, const Net_Manager);
 	shared_ptr<Cell> cellEnclose(const Point&);
-	set<shared_ptr<Cell>> cellsOnVertex(const Point&);
+	shared_ptr<Cell> cellsOnVertex(const Point&, const Edge&);
+	shared_ptr<Cell> middleCellOfMT(const Edge&);
 	set<shared_ptr<Cell>> getNeighbor(const shared_ptr<Cell>&);
 };
 

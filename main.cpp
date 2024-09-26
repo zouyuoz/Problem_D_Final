@@ -108,7 +108,7 @@ void outputNet(vector<Point> path) {
 }
 
 int main(int argc, char* argv[]) {
-	int testCase = 2;
+	int testCase = 0;
 
 	Chip chip(testCase);
 	Net_Manager net;
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 1014; // 1014 1016
+	int findNet = 1453; // 1014 1016
 	int count = 0;
 	int countMTs = 0;
 	int countRXs = 0;
@@ -131,13 +131,14 @@ int main(int argc, char* argv[]) {
 
 	for (Net const &n : net.totalNets) {
 		if (n.ID != findNet) continue;
-		if (n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size()) ++countMTs;
+		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;
 
-		if (!(n.HMFT_MUST_THROUGHs.size() + n.MUST_THROUGHs.size())) continue;
+		if (!(n.orderedMTs.size())) continue;
 
-		cout << n.ID << ":\tbBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ") ";
+		cout << n.ID << ":\tbBox: " << n.bBoxArea() << ", size: " << n.orderedMTs.size() << " (" << count << "/" << totalAmount << ")\n";
+		// continue;
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
 		outputNet(PATH);

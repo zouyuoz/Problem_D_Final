@@ -131,7 +131,7 @@ shared_ptr<Cell> Cell_Manager::cellEnclose(const Point &p) {
 	return cells[x_index][y_index];
 }
 
-set<shared_ptr<Cell>> Cell_Manager::cellsOnVertex(const Point &p) {
+shared_ptr<Cell> Cell_Manager::cellsOnVertex(const Point &p, const Edge &e) {
 	set<shared_ptr<Cell>> cellsOnPoint;
 	int x_index = 0, y_index = 0;
 
@@ -143,7 +143,35 @@ set<shared_ptr<Cell>> Cell_Manager::cellsOnVertex(const Point &p) {
 	cellsOnPoint.insert(cells[x_index - 1][y_index]);
 	cellsOnPoint.insert(cells[x_index - 1][y_index - 1]);
 
-	return cellsOnPoint;
+	for (auto const &cell: cellsOnPoint) {
+		if (!cell->isSomeNetsMT()) continue;
+		bool foundCell = 0;
+		for (auto const mt: cell->someNetsMTs) {
+			if (mt == e) { return cell; }
+		}
+	}
+	return nullptr;
+}
+
+shared_ptr<Cell> Cell_Manager::middleCellOfMT(const Edge& e) {
+	auto cell1 = cellsOnVertex(e.first, e), cell2 = cellsOnVertex(e.second, e);
+	int midCoord = e.ranged().min + ((e.ranged().max - e.ranged().min) / 2);
+	if (e.isVertical()) {
+		for (int i = cell1->yIndex; i < cell2->yIndex; ++i) {
+			if (cells[cell1->xIndex][i]->y.min <= midCoord && cells[cell1->xIndex][i]->y.max >= midCoord) {
+				return cells[cell1->xIndex][i];
+			}
+		}
+	} else {
+		for (int i = cell1->xIndex; i < cell2->xIndex; ++i) {
+			if (cells[i][cell1->yIndex]->x.min <= midCoord && cells[i][cell1->yIndex]->x.max >= midCoord) {
+				return cells[i][cell1->yIndex];
+			}
+		}
+	}
+	int xIndexMid = cell1->xIndex + ((cell2->xIndex - cell1->xIndex) / 2);
+	int yIndexMid = cell1->yIndex + ((cell2->yIndex - cell1->yIndex) / 2);
+	return cells[xIndexMid][yIndexMid];
 }
 
 set<shared_ptr<Cell>> Cell_Manager::getNeighbor(const shared_ptr<Cell> &theCell) {
