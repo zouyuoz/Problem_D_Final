@@ -116,8 +116,8 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 1453; // 1014 1016
-	int count = 0;
+	int findNet = 640; // 1014 1016
+	int count = 0; // 640
 	int countMTs = 0; // 1453
 	int countRXs = 0; // 363
 	int totalAmount = net.totalNets.size();
@@ -132,9 +132,8 @@ int main(int argc, char* argv[]) {
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;
 
-		if (n.RXs.size() < 4) continue;
-
-		cout << n.ID << ": size: " << n.RXs.size() << ", bBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ")\n";
+		cout << n.ID << ": size: " << n.RXs.size() + n.orderedMTs.size();
+		cout << ", bBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ")\n";
 		// continue;
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);

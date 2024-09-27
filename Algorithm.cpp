@@ -580,6 +580,10 @@ void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, Point 
 
 void A_star_algorithm::makePathToSegments(bool hasRXs) {
 	if (!hasRXs) {
+		if (path.size() == 1) {
+			pathSegments.emplace_back(path[0], path[0]);
+			return;
+		}
 		for (int i = 0; i < path.size() - 1; ++i) {
 			pathSegments.emplace_back(path[i], path[i + 1]);
 		}
