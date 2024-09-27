@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 361; // 1014 1016
+	int findNet = 1453; // 1014 1016
 	int count = 0;
 	int countMTs = 0; // 1453
 	int countRXs = 0; // 363
