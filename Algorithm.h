@@ -27,7 +27,7 @@ public:
 	int h_value = 0;
 	int f_value = 0;
 	void calculate_g(const shared_ptr<Node>&);
-	void calculate_h(const Point&);
+	void calculate_h(const vector<Terminal>&);
 	void calculate_f();
 
 	void outputTemporaryPath();
@@ -51,8 +51,8 @@ public:
 	void handleMultRXNets(const Net &net);
 	void handleHasMTsNets(const Net &net);
 	void handleNormalNets(const Net &net);
-	shared_ptr<Node> findPath(shared_ptr<Node>, const Edge&, int);
 	shared_ptr<Node> findPath(shared_ptr<Node>, shared_ptr<Cell>, const Net&);
+	vector<shared_ptr<Node>> findPathRXs(shared_ptr<Node>, vector<shared_ptr<Cell>>, const Net&);
 
 	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, const Net&);
 	bool directionIntoPort(shared_ptr<Cell>, shared_ptr<Cell>, const Edge&);

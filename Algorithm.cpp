@@ -22,8 +22,11 @@ void Node::calculate_g(const shared_ptr<Node> &nowNode) {
 	if (extraTurn) g_value += TURN_COST * (int)(std::pow(turn, 4) - std::pow(turn - 1, 4));
 }
 
-void Node::calculate_h(const Point &endPoint) {
-	h_value = abs(endPoint.x - cell->node.x) + abs(endPoint.y - cell->node.y); // distance_to_end;
+void Node::calculate_h(const vector<Terminal> &endPoint) {
+	for (int i = 0; i < endPoint.size(); ++i) {
+		h_value += abs(endPoint[0].coord.x - cell->node.x) + abs(endPoint[0].coord.y - cell->node.y); // distance_to_end;
+	}
+	if (endPoint.size() > 1) h_value *= (2/3);
 	return;
 }
 
@@ -228,7 +231,9 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 			}
 			if (nextCell->block->noPort()) {
 				if (nextCell->block->is_feedthroughable) return 1;
-				if (nextCell->block == net.RXs[0].block) return 1;
+				for (int i = 0; i < net.RXs.size(); ++i) {
+					if (nextCell->block == net.RXs[i].block) return 1;
+				}
 			}
 		}
 		else return 1;
@@ -242,13 +247,105 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 // maybe we could try this method and the old one
 // and compare which one is more optimized
 void A_star_algorithm::handleMultRXNets(const Net &net) {
-	set<shared_ptr<Cell>> targetCells;
+	vector<shared_ptr<Cell>> targetCells;
 	for (const auto &rx: net.RXs) {
-		targetCells.insert(allCells.cellEnclose(rx.coord));
+		targetCells.push_back(allCells.cellEnclose(rx.coord));
 	}
 	Point s = net.TX.coord;
 	shared_ptr<Node> sourceNode = make_shared<Node>(allCells.cellEnclose(s));
-	
+	auto targetNodes = findPathRXs(sourceNode, targetCells, net);
+	for (auto it = targetNodes.begin(); it != targetNodes.end(); ++it) {
+		Point thisRX;
+		shared_ptr<Node> thisTarget = *it;
+		for (auto const t: net.RXs) {
+			if (thisTarget->cell->enclose(t.coord)) {
+				thisRX = t.coord;
+				break;
+			}
+		}
+		backTraceFinalPath(thisTarget, net.TX.coord, thisRX);
+	}
+}
+
+vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode, vector<shared_ptr<Cell>> targets, const Net &net) {
+	path = {};
+	vector<shared_ptr<Node>> targetNodes;
+	auto RXs = net.RXs;
+	std::ofstream file("log.txt");
+
+	cout<< "hello";
+
+	set<shared_ptr<Node>> Open = { sourceNode };
+	set<shared_ptr<Node>> Close;
+
+	int iter = -1;
+	while (!Open.empty()) {
+		// find node with smallest f(n) in open
+		shared_ptr<Node> nowNode = findSmallestFValueNode(Open);
+
+		set<shared_ptr<Cell>> neighbors = allCells.getNeighbor(nowNode->cell);
+		for (auto &n: neighbors) {
+			if (!n) { continue; }
+
+			auto t = targets.begin();
+			for (; t != targets.end(); ++t) {
+				if (n == *t) {
+					cout << "PATH found!\n";
+					auto it = RXs.begin();
+					for (; it != RXs.end(); ++it) {
+						if (n->enclose((*it).coord)) break;
+					}
+					RXs.erase(it);
+					shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
+					targetNodes.push_back(final);
+					break;
+				}
+			}
+			targets.erase(t);
+
+			if (!canGoNext(nowNode->cell, n, net)) {
+				// INVALID: can't go or not belong terminals
+				continue;
+			}
+			if (!n->capacityEnough(net.num)) {
+				// INVALID: capacity not enough
+				continue;
+			}
+
+			shared_ptr<Node> neighbor = nowNode->generateNeighbor(n, file);
+			neighbor->calculate_g(nowNode);
+			neighbor->calculate_h(RXs);
+			neighbor->calculate_f();
+
+			bool alreadyExistInClose = 0;
+			for (const auto &close: Close) {
+				if (neighbor->cell == close->cell) {
+					alreadyExistInClose = 1;
+					break;
+				}
+			}
+			if (alreadyExistInClose) continue;
+
+			bool alreadyExistInOpenAndNotBetter = 0;
+			for (auto it = Open.begin(); it != Open.end(); ++it) {
+				if (neighbor->cell == (*it)->cell) {
+					if (neighbor->f_value >= (*it)->f_value) {
+						alreadyExistInOpenAndNotBetter = 1;
+					} else {
+						Open.erase(it);
+					}
+					break;
+				}
+			}
+			if (alreadyExistInOpenAndNotBetter) continue;
+
+			Open.insert(neighbor);
+		}
+		Open.erase(nowNode);
+		Close.insert(nowNode);
+	}
+	file.close();
+	return targetNodes;
 }
 
 void A_star_algorithm::handleNormalNets(const Net &net) {
@@ -287,12 +384,6 @@ shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_
 		// find node with smallest f(n) in open
 		shared_ptr<Node> nowNode = findSmallestFValueNode(Open);
 
-		if (Log) {
-			file << "------- iter " << ++iter << " -------\n";
-			file << "nowNode(" << nowNode->cell->node.x << "," << nowNode->cell->node.y << ")\t";
-			file << "f: " << nowNode->f_value << "\n";
-		}
-
 		set<shared_ptr<Cell>> neighbors = allCells.getNeighbor(nowNode->cell);
 		for (auto &n: neighbors) {
 			if (!n) { continue; }
@@ -314,7 +405,7 @@ shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_
 
 			shared_ptr<Node> neighbor = nowNode->generateNeighbor(n, file);
 			neighbor->calculate_g(nowNode);
-			neighbor->calculate_h(net.RXs[0].coord);
+			neighbor->calculate_h(net.RXs);
 			neighbor->calculate_f();
 
 			bool alreadyExistInClose = 0;

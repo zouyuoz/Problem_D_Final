@@ -119,10 +119,10 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 1453; // 1014 1016
+	int findNet = 363; // 1014 1016
 	int count = 0;
-	int countMTs = 0;
-	int countRXs = 0;
+	int countMTs = 0; // 1453
+	int countRXs = 0; // 363
 	int totalAmount = net.totalNets.size();
 	set<int> forbiddens;
 
@@ -130,14 +130,14 @@ int main(int argc, char* argv[]) {
 	outputCell("zzp.csv", chip.allCells);
 
 	for (Net const &n : net.totalNets) {
-		if (n.ID != findNet) continue;
+		// if (n.ID != findNet) continue;
 		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;
 
-		if (!(n.orderedMTs.size())) continue;
+		if (n.RXs.size() < 3) continue;
 
-		cout << n.ID << ":\tbBox: " << n.bBoxArea() << ", size: " << n.orderedMTs.size() << " (" << count << "/" << totalAmount << ")\n";
+		cout << n.ID << ": size: " << n.RXs.size() << ", bBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ")\n";
 		// continue;
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
