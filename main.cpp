@@ -49,7 +49,10 @@ void outputToCSV(
 		d << "x,y\n";
 		for (const auto &n: net.totalNets) {
 			if (n.ID != id) continue;
-			d << n.TX.coord.x << "," << n.TX.coord.y << "\n" << n.RXs[0].coord.x << "," << n.RXs[0].coord.y << "\n";
+			d << n.TX.coord.x << "," << n.TX.coord.y << "\n";
+			for (int i = 0; i < n.RXs.size(); ++i) {
+				d << n.RXs[i].coord.x << "," << n.RXs[i].coord.y << "\n";
+			}
 			for (auto const &MT: n.MUST_THROUGHs) {
 				auto mt = MT;
 				file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",3\n";
@@ -100,7 +103,8 @@ void outputNet(vector<Point> path) {
 		file.close();
 		return;
 	}
-	for (size_t i = 0; i < path.size() - 1; ++i) {
+	for (int i = 0; i < path.size() - 1; ++i) {
+		if (path[i].x != path[i + 1].x && path[i].y != path[i + 1].y) continue;
 		file << path[i].x << "," << path[i].y << "," << path[i + 1].x << "," << path[i + 1].y << "\n";
 	}
 	file.close();
@@ -130,7 +134,7 @@ int main(int argc, char* argv[]) {
 	outputCell("zzp.csv", chip.allCells);
 
 	for (Net const &n : net.totalNets) {
-		// if (n.ID != findNet) continue;
+		if (n.ID != findNet) continue;
 		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;

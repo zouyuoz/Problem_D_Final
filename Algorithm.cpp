@@ -57,6 +57,15 @@ shared_ptr<Node> Node::generateNeighbor(const shared_ptr<Cell> &n, std::ofstream
 	return std::move(neighbor);
 }
 
+void outputTemporaryPath(const vector<Point> path) {
+	cout << ":\n";
+	for (int i = 0; i < path.size(); ++i) {
+		cout << path[i].x << "," << path[i].y << "\n";
+	}
+	// cout << path[i].x << "," << path[i].y << "," << path[i + 1].x << "," << path[i + 1].y << "\n";
+	return;
+}
+
 void Node::outputTemporaryPath() {
 	cout << "(" << cell->node.x << "," << cell->node.y << ")\n";
 	shared_ptr<const Node> thisNode = this->parent;
@@ -254,6 +263,8 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 	Point s = net.TX.coord;
 	shared_ptr<Node> sourceNode = make_shared<Node>(allCells.cellEnclose(s));
 	auto targetNodes = findPathRXs(sourceNode, targetCells, net);
+
+	vector<Point> assemblyPath;
 	for (auto it = targetNodes.begin(); it != targetNodes.end(); ++it) {
 		Point thisRX;
 		shared_ptr<Node> thisTarget = *it;
@@ -264,7 +275,11 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 			}
 		}
 		backTraceFinalPath(thisTarget, net.TX.coord, thisRX);
+		assemblyPath.insert(assemblyPath.end(), path.begin(), path.end());
+		path = {};
 	}
+	path = assemblyPath;
+	return;
 }
 
 vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode, vector<shared_ptr<Cell>> targets, const Net &net) {
@@ -272,8 +287,6 @@ vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNo
 	vector<shared_ptr<Node>> targetNodes;
 	auto RXs = net.RXs;
 	std::ofstream file("log.txt");
-
-	cout<< "hello";
 
 	set<shared_ptr<Node>> Open = { sourceNode };
 	set<shared_ptr<Node>> Close;
@@ -298,10 +311,11 @@ vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNo
 					RXs.erase(it);
 					shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
 					targetNodes.push_back(final);
+					targets.erase(t);
 					break;
 				}
 			}
-			targets.erase(t);
+			if (targets.empty()) return targetNodes;
 
 			if (!canGoNext(nowNode->cell, n, net)) {
 				// INVALID: can't go or not belong terminals
