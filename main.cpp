@@ -1,5 +1,4 @@
 #include "Algorithm.h"
-#include <cstddef>
 #include <iomanip>
 #include <memory>
 #include <ostream>
@@ -36,11 +35,11 @@ void outputToCSV(
 
 	for (auto const &b : chip.allBlocks) {
 		for (auto const &mt : b->block_port_region) {
-			file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",0\n";
+			file_mt << mt.p1.x << "," << mt.p1.y << "," << mt.p2.x << "," << mt.p2.y << ",0\n";
 		}
 		for (auto const &hi : b->through_block_edge_net_num) {
 			auto mt = hi->edge;
-			file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",1\n";
+			file_mt << mt.p1.x << "," << mt.p1.y << "," << mt.p2.x << "," << mt.p2.y << ",1\n";
 		}
 	}
 
@@ -55,11 +54,11 @@ void outputToCSV(
 			}
 			for (auto const &MT: n.MUST_THROUGHs) {
 				auto mt = MT;
-				file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",3\n";
+				file_mt << mt.p1.x << "," << mt.p1.y << "," << mt.p2.x << "," << mt.p2.y << ",3\n";
 			}
 			for (auto const &MT: n.HMFT_MUST_THROUGHs) {
 				auto mt = MT;
-				file_mt << mt.first.x << "," << mt.first.y << "," << mt.second.x << "," << mt.second.y << ",3\n";
+				file_mt << mt.p1.x << "," << mt.p1.y << "," << mt.p2.x << "," << mt.p2.y << ",3\n";
 			}
 			if (n.ID == id) break;
 		}
@@ -95,17 +94,11 @@ void outputCell(string const &file, Cell_Manager cell) {
     cout << "Data written to " << file << "\n";
 }
 
-void outputNet(vector<Point> path) {
+void outputNet(vector<Simple_Edge> path) {
 	if (!path.size()) return;
 	std::ofstream file("zzn.csv", std::ios::app);
-	if (path.size() == 1) {
-		file  << path[0].x << "," << path[0].y <<  "," << path[0].x << "," << path[0].y << "\n";
-		file.close();
-		return;
-	}
-	for (int i = 0; i < path.size() - 1; ++i) {
-		if (path[i].x != path[i + 1].x && path[i].y != path[i + 1].y) continue;
-		file << path[i].x << "," << path[i].y << "," << path[i + 1].x << "," << path[i + 1].y << "\n";
+	for (int i = 0; i < path.size(); ++i) {
+		file << path[i].p1.x << "," << path[i].p1.y << "," << path[i].p2.x << "," << path[i].p2.y << "\n";
 	}
 	file.close();
 	return;
@@ -123,7 +116,7 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 363; // 1014 1016
+	int findNet = 361; // 1014 1016
 	int count = 0;
 	int countMTs = 0; // 1453
 	int countRXs = 0; // 363
@@ -139,14 +132,14 @@ int main(int argc, char* argv[]) {
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++count;
 
-		if (n.RXs.size() < 3) continue;
+		if (n.RXs.size() < 4) continue;
 
 		cout << n.ID << ": size: " << n.RXs.size() << ", bBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ")\n";
 		// continue;
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
 		outputNet(PATH);
-		// if (n.ID >= findNet) break;
+		if (n.ID >= findNet) break;
 	}
 
 	cout << "Done search.\nForbiddens:\n";

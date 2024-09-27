@@ -46,8 +46,10 @@ private:
 public:
 	A_star_algorithm(Chip &caseChip);
 	vector<Point> path;
+	vector<vector<Point>> RXsPath;
+	vector<Simple_Edge> pathSegments;
 
-	vector<Point> getPath(const Net &net);
+	vector<Simple_Edge> getPath(const Net &net);
 	void handleMultRXNets(const Net &net);
 	void handleHasMTsNets(const Net &net);
 	void handleNormalNets(const Net &net);
@@ -58,6 +60,9 @@ public:
 	bool directionIntoPort(shared_ptr<Cell>, shared_ptr<Cell>, const Edge&);
 	void backTraceFinalPath(shared_ptr<Node>&, Point, Point);
 	void monotonicPath(Point, Point);
+	void addNodesToRXsPath();
+	void simplifiedSpanningTree(vector<vector<Point>>&, Point = Point(), int = -1);
+	void makePathToSegments(bool);
 };
 
 #endif // ALGORITHM_H_INCLUDED

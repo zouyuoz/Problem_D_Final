@@ -154,7 +154,7 @@ shared_ptr<Cell> Cell_Manager::cellsOnVertex(const Point &p, const Edge &e) {
 }
 
 shared_ptr<Cell> Cell_Manager::middleCellOfMT(const Edge& e) {
-	auto cell1 = cellsOnVertex(e.first, e), cell2 = cellsOnVertex(e.second, e);
+	auto cell1 = cellsOnVertex(e.p1, e), cell2 = cellsOnVertex(e.p2, e);
 	int midCoord = e.ranged().min + ((e.ranged().max - e.ranged().min) / 2);
 	if (e.isVertical()) {
 		for (int i = cell1->yIndex; i < cell2->yIndex; ++i) {

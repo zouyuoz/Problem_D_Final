@@ -79,7 +79,7 @@ void shift(vector<Point> &anyVertices, Point const &min) {
 }
 
 vector<Point> edge2Point(Edge const &e) {
-	return vector<Point> { e.first, e.second };
+	return vector<Point> { e.p1, e.p2 };
 }
 
 void Block::transposeAllVertices() {
@@ -117,14 +117,14 @@ void Block::transposeAllVertices() {
 	for (auto &TBENN : through_block_edge_net_num) {
 		vector<Point> pointsOfEdge = edge2Point(TBENN->edge);
 		shift(pointsOfEdge, coordinate);
-		TBENN->edge.first = pointsOfEdge[0];
-		TBENN->edge.second = pointsOfEdge[1];
+		TBENN->edge.p1 = pointsOfEdge[0];
+		TBENN->edge.p2 = pointsOfEdge[1];
 	}
 	for (Edge &BPR : block_port_region) {
 		vector<Point> pointsOfEdge = edge2Point(BPR);
 		shift(pointsOfEdge, coordinate);
-		BPR.first = pointsOfEdge[0];
-		BPR.second = pointsOfEdge[1];
+		BPR.p1 = pointsOfEdge[0];
+		BPR.p2 = pointsOfEdge[1];
 	}
 
 	return;
@@ -151,8 +151,8 @@ bool Block::enclose(const Point p) const {
     for (const Edge& edge : edges) {
         if (isPointOnEdge(p, edge)) return false; // count as exterior if on edge
 
-        if ((edge.first.y > p.y) != (edge.second.y > p.y)) {
-            int intersectX = edge.first.x + (p.y - edge.first.y) * (edge.second.x - edge.first.x) / (edge.second.y - edge.first.y);
+        if ((edge.p1.y > p.y) != (edge.p2.y > p.y)) {
+            int intersectX = edge.p2.x + (p.y - edge.p1.y) * (edge.p2.x - edge.p1.x) / (edge.p2.y - edge.p1.y);
             if (p.x < intersectX) {
                 inside = !inside;
             }
@@ -180,12 +180,12 @@ void Block::adjustPortCoordinate(Edge &theEdge) {
 	if (adjustCoordValue == theEdge.fixed()) return;
 	if (theEdge.isVertical()) {
 		// fixed == X
-		theEdge.first.x = adjustCoordValue;
-		theEdge.second.x = adjustCoordValue;
+		theEdge.p1.x = adjustCoordValue;
+		theEdge.p2.x = adjustCoordValue;
 	} else {
 		// fixed == Y
-		theEdge.first.y = adjustCoordValue;
-		theEdge.second.y = adjustCoordValue;
+		theEdge.p1.y = adjustCoordValue;
+		theEdge.p2.y = adjustCoordValue;
 	}
 	return;
 }
@@ -207,15 +207,15 @@ std::ostream& operator<<(std::ostream& os, const Block& b) {
 	os << "through_block_net_num: " << b.through_block_net_num << "\n"
 	<< "through_block_edge_net_num: ";
 	for (auto const &TBENN : b.through_block_edge_net_num) {
-		os << "\n" << "(" << TBENN->edge.first.x << ", " << TBENN->edge.first.y << ") ("
-		<< TBENN->edge.second.x << ", " << TBENN->edge.second.y << ") " << TBENN->net_num;
+		os << "\n" << "(" << TBENN->edge.p1.x << ", " << TBENN->edge.p1.y << ") ("
+		<< TBENN->edge.p2.x << ", " << TBENN->edge.p2.y << ") " << TBENN->net_num;
 	}
 	os << "\n";
 
 	os << "block_port_region: ";
 	for (Edge const &BPR : b.block_port_region) {
-		os << "\n" << "(" << BPR.first.x << ", " << BPR.first.y
-		<< ") (" << BPR.second.x << ", " << BPR.second.y << ")";
+		os << "\n" << "(" << BPR.p1.x << ", " << BPR.p1.y
+		<< ") (" << BPR.p2.x << ", " << BPR.p2.y << ")";
 	}
 	os << "\n";
 	

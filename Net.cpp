@@ -131,10 +131,10 @@ Net Net::getSoleNet(int const &id) const {
 /*=======================================*/
 
 void insertEdgeCoords2Set(set<int> &x_value, set<int> &y_value, const Edge &e) {
-	x_value.insert(e.first.x);
-	x_value.insert(e.second.x);
-	y_value.insert(e.first.y);
-	y_value.insert(e.second.y);
+	x_value.insert(e.p1.x);
+	x_value.insert(e.p2.x);
+	y_value.insert(e.p1.y);
+	y_value.insert(e.p2.y);
 	return;
 }
 
@@ -222,12 +222,12 @@ void Net::getBBox() {
 	return;
 }
 int Net::bBoxArea() const {
-	int x_edge_length_mod = (bBox.second.x - bBox.first.x) / 2000;
-	int y_edge_length_mod = (bBox.second.y - bBox.first.y) / 2000;
+	int x_edge_length_mod = (bBox.p2.x - bBox.p1.x) / 2000;
+	int y_edge_length_mod = (bBox.p2.y - bBox.p1.y) / 2000;
 	return x_edge_length_mod * y_edge_length_mod;
 }
 int Net::bBoxHPWL() const {
-	return (bBox.second.x - bBox.first.x) + (bBox.second.y - bBox.first.y);
+	return (bBox.p2.x - bBox.p1.x) + (bBox.p2.y - bBox.p1.y);
 }
 
 void Net::setOrderedMTs() {
@@ -235,7 +235,7 @@ void Net::setOrderedMTs() {
 	if (!HMFT_MUST_THROUGHs.size()) return;
 
 	auto mt = HMFT_MUST_THROUGHs[0];
-	Point edgeMidPoint((mt.first.x + mt.second.x) / 2, (mt.first.y + mt.second.y) / 2);
+	Point edgeMidPoint((mt.p1.x + mt.p2.x) / 2, (mt.p1.y + mt.p2.y) / 2);
 	int mDistanceToSource = (edgeMidPoint.x - TX.coord.x) + (edgeMidPoint.y - TX.coord.y);
 	int mDistanceToTarget = (edgeMidPoint.x - RXs[0].coord.x) + (edgeMidPoint.y - RXs[0].coord.y);
 
@@ -260,14 +260,14 @@ std::ostream& operator <<(std::ostream& os, const Net& net) {
 	if (net.MUST_THROUGHs.size()) {
 		for (const Edge &t : net.MUST_THROUGHs) {
 			os << " - " << t.block->name;
-			os << " (" << t.first.x << ", " << t.first.y << ") (" << t.second.x << ", " << t.second.y << ")\n";
+			os << " (" << t.p1.x << ", " << t.p1.y << ") (" << t.p2.x << ", " << t.p2.y << ")\n";
 		}
 	}
 	os << "HMFT_MUST_THROUGH: " << "\n";
 	if (net.HMFT_MUST_THROUGHs.size()) {
 		for (const Edge &t : net.HMFT_MUST_THROUGHs){
 			os << " - " << t.block->name;
-			os << " (" << t.first.x << ", " << t.first.y << ") (" << t.second.x << ", " << t.second.y << ")\n";
+			os << " (" << t.p1.x << ", " << t.p1.y << ") (" << t.p2.x << ", " << t.p2.y << ")\n";
 		}
 	}
 	os << "----------------------" << "\n";

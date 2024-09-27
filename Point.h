@@ -2,6 +2,7 @@
 #define POINT_H_INCLUDE
 
 #include <algorithm>
+#include <iostream>
 
 class Point {
 public:
@@ -14,9 +15,13 @@ public:
     }
 
 	bool operator<(const Point &other) const {
-		if (x + y < other.x + other.y) return 1;
-		if (x + y > other.x + other.y) return 0;
-		return x < other.x;
+        if (x != other.x) return x < other.x;
+        return y < other.y;
+	}
+
+	friend std::ostream& operator<<(std::ostream &os, const Point &p) {
+		os << "(" << p.x << "," << p.y << ")";
+		return os;
 	}
 };
 

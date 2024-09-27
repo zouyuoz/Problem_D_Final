@@ -1,9 +1,11 @@
 #include "Algorithm.h"
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <memory>
 #include <utility>
+#include <vector>
 
 using std::abs;
 
@@ -77,7 +79,6 @@ void Node::outputTemporaryPath() {
 
 shared_ptr<Node> findSmallestFValueNode(const set<shared_ptr<Node>> &open) {
 	// return *open.begin(); // should verified
-	// dude why is that so weird...
 	int smallestFvalue = INT_MAX;
 	auto nodeWithSmallestFvalue = *open.begin();
 	for (const auto &o: open) {
@@ -89,7 +90,7 @@ shared_ptr<Node> findSmallestFValueNode(const set<shared_ptr<Node>> &open) {
 	return nodeWithSmallestFvalue;
 }
 
-vector<Point> A_star_algorithm::getPath(const Net &net) {
+vector<Simple_Edge> A_star_algorithm::getPath(const Net &net) {
 	path = {};
 	bool hasMTs = net.orderedMTs.size();
 	bool hasRXs = net.RXs.size() > 1;
@@ -101,16 +102,19 @@ vector<Point> A_star_algorithm::getPath(const Net &net) {
 	} else {
 		handleNormalNets(net);
 	}
-	return std::move(path);
+
+	makePathToSegments(hasRXs);
+	return std::move(pathSegments);
 }
 
-// first get which cells belongs to a port
-// and do it to all the ports
-// store these Cells to MTs
-// when doing the algorithm, these cells is set to throughable
-// (if is originally not throughable)
-// after find a path, check if all the mt in MTs are included
-// if no, redo algorithm, else export this path
+// first get middle cell of a MTs
+// when finding path, consider every cellMT is a temporary RX
+// and do the normal algorithm
+// Once the algorithm output a Node, let it be the new TX
+// and take the next cellMT as new RX
+// repeat this process until the last cellMT finish searching
+// eventually do the algorithm route to the very RX
+// finally, back trace the path and return it
 void A_star_algorithm::handleHasMTsNets(const Net &net) {
 	Point s = net.TX.coord;
 	Point t = net.RXs[0].coord;
@@ -264,7 +268,6 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 	shared_ptr<Node> sourceNode = make_shared<Node>(allCells.cellEnclose(s));
 	auto targetNodes = findPathRXs(sourceNode, targetCells, net);
 
-	vector<Point> assemblyPath;
 	for (auto it = targetNodes.begin(); it != targetNodes.end(); ++it) {
 		Point thisRX;
 		shared_ptr<Node> thisTarget = *it;
@@ -275,10 +278,8 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 			}
 		}
 		backTraceFinalPath(thisTarget, net.TX.coord, thisRX);
-		assemblyPath.insert(assemblyPath.end(), path.begin(), path.end());
-		path = {};
+		RXsPath.push_back(std::move(path));
 	}
-	path = assemblyPath;
 	return;
 }
 
@@ -502,5 +503,89 @@ void A_star_algorithm::monotonicPath(Point s, Point t) {
 	path.push_back(s);
 	if (!isStraight) path.push_back(Point(s.x, t.y));
 	path.push_back(t);
+	return;
+}
+
+void A_star_algorithm::addNodesToRXsPath() {
+	set<Point> nodes;
+	for (const auto &path: RXsPath) {
+		for (const auto &p: path) {
+			nodes.insert(p);
+		}
+	}
+
+	vector<vector<Point>> newRXsPath;
+
+	for (int j = 0; j < RXsPath.size(); ++j) {
+		// in a single path
+		// calling newRXsPath[j];
+		newRXsPath[j].push_back(RXsPath[j][0]);
+
+		for (int i = 0; i < RXsPath[j].size() - 1; ++i) {
+			// for a single segment of path
+			vector<Point> intersections = { RXsPath[j][i + 1] };
+			for (const auto &n: nodes) {
+				if (
+					std::min(RXsPath[j][i].x, RXsPath[j][i + 1].x) <= n.x
+					&& std::max(RXsPath[j][i].x, RXsPath[j][i + 1].x) >= n.x
+					&& std::min(RXsPath[j][i].y, RXsPath[j][i + 1].y) <= n.y
+					&& std::max(RXsPath[j][i].y, RXsPath[j][i + 1].y) >= n.y
+				) {
+					intersections.push_back(n);
+				}
+			}
+
+			if (RXsPath[j][i] < RXsPath[j][i + 1]) {
+				std::sort(intersections.begin(), intersections.end(),
+				[](const Point &a, const Point &b) {
+					return a < b;
+				});
+			} else {
+				std::sort(intersections.begin(), intersections.end(),
+				[](const Point &a, const Point &b) {
+					return b < a;
+				});
+			}
+
+			for (const auto &p: intersections) newRXsPath[j].push_back(p);
+		}
+	}
+
+	RXsPath.swap(newRXsPath);
+	newRXsPath.clear();
+	return;
+}
+
+void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, Point parent, int index) {
+	if (all[0].size() - 1 == index) return;
+	++index;
+
+    set<Point> nextsFirst;
+    for (const auto &single : all) {
+        nextsFirst.insert(single[index]);
+    }
+
+    for (const auto &p : nextsFirst) {
+        if (index) pathSegments.emplace_back(parent, p);
+        vector<vector<Point>> nexts;
+        for (const auto &single : all) {
+            if (index < single.size() && single[index] == p) {
+                nexts.push_back(single);
+            }
+        }
+        simplifiedSpanningTree(nexts, index);
+    }
+	return;
+}
+
+void A_star_algorithm::makePathToSegments(bool hasRXs) {
+	if (!hasRXs) {
+		for (int i = 0; i < path.size() - 1; ++i) {
+			pathSegments.emplace_back(path[i], path[i + 1]);
+		}
+	} else {
+		addNodesToRXsPath();
+		simplifiedSpanningTree(RXsPath);
+	}
 	return;
 }

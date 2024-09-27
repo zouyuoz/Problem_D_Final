@@ -32,7 +32,7 @@ public:
 	Edge BPR;
 	shared_ptr<EdgeNetNum> TBENN;
 	vector<Edge> someNetsMTs;
-	bool isBPR() { return BPR.first.x != -99; }
+	bool isBPR() { return BPR.p1.x != -99; }
 	bool isSomeNetsMT() { return someNetsMTs.size(); }
 
     bool enclose(const Point&);
