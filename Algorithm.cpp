@@ -187,7 +187,7 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 		}
 	}
 
-	bool showde = 1;
+	bool showde = 0;
 
 	if (nowCell->inBlock()) {
 		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
@@ -279,6 +279,11 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 		}
 		backTraceFinalPath(thisTarget, net.TX.coord, thisRX);
 		RXsPath.push_back(std::move(path));
+	}
+	for (auto const &v: RXsPath) {
+		cout << "\n{";
+		for (auto const &p: v) cout << p << ",";
+		cout << "},";
 	}
 	return;
 }
@@ -552,28 +557,36 @@ void A_star_algorithm::addNodesToRXsPath() {
     	auto last = std::unique(newRXsPath[j].begin(), newRXsPath[j].end());
     	newRXsPath[j].erase(last, newRXsPath[j].end());
 	}
-
 	RXsPath.swap(newRXsPath);
 	newRXsPath.clear();
 	return;
 }
 
 void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int index, Point parent) {
-	if (all[0].size() - 1 == index) return;
+	// bool allPathsProcessed = true;
+    // for (const auto &path : all) {
+    //     if (index == path.size() - 1) {
+    //         allPathsProcessed = false;
+    //         break;
+    //     }
+    // }
+    // if (allPathsProcessed) return;
+	
+	if (all.size() == 1 && all[0].size() - 1 == index) return;
 	++index;
-	// cout << "iter: " << index << "\n";
+	cout << "iter: " << index << "\n";
 	set<Point> nextsFirst;
 	for (const auto &single : all) {
 		nextsFirst.insert(single[index]);
 	}
 
-	// cout << "> in index " << index << ", " << nextsFirst.size() << " nums";
-	// for (auto const p: nextsFirst) cout << ", " << p;
-	// cout << "\n";
+	cout << "> in index " << index << ", " << nextsFirst.size() << " nums";
+	for (auto const p: nextsFirst) cout << ", " << p;
+	cout << "\n";
 
 	for (const auto &p : nextsFirst) {
 		// cout << p << "\n";
-		// if (index) cout << parent << "->" << p << "\n";
+		if (index) cout << parent << "->" << p << "\n";
 		if (index) pathSegments.emplace_back(parent, p);
 		vector<vector<Point>> nexts;
 		for (const auto &single : all) {
@@ -581,10 +594,10 @@ void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int in
 				nexts.push_back(single);
 			}
 		}
-		// cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
+		cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
 		simplifiedSpanningTree(nexts, index, p);
 	}
-	// cout << "end of iter " << index << "\n";
+	cout << "end of iter " << index << "\n";
 	return;
 }
 

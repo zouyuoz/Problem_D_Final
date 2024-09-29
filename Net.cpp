@@ -57,6 +57,7 @@ void Net_Manager::ParserAllNets (int const &testCase, Chip const &chip) {
 		// Write into RXs
 		std::set<Terminal> non_repeat_rxs;
 		for (int i = 0; i < tempRXNameArray.size(); i++){
+			if (tempRXNameArray.size() > 1 && tempRXCoordArray[i] == tempNet.TX.coord) continue;
 			Terminal RX(tempRXNameArray[i], tempRXCoordArray[i]);
 			if (tempRXNameArray[i][0] == 'B') {
 				RX.block = chip.getBlock(tempRXNameArray[i]);
@@ -65,7 +66,6 @@ void Net_Manager::ParserAllNets (int const &testCase, Chip const &chip) {
 			else for (const auto &b: chip.allBlocks) {
 				if (b->enclose(RX.coord)) { RX.block = b; break; }
 			}
-			
 			non_repeat_rxs.insert(RX);
 		}
 		for (auto it = non_repeat_rxs.begin(); it !=non_repeat_rxs.end(); ++it) tempNet.RXs.push_back(*it);
