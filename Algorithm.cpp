@@ -279,9 +279,9 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 	return;
 }
 
-vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode, vector<shared_ptr<Cell>> targets, const Net &net) {
+set<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode, vector<shared_ptr<Cell>> targets, const Net &net) {
 	path = {};
-	vector<shared_ptr<Node>> targetNodes;
+	set<shared_ptr<Node>> targetNodes;
 	auto RXs = net.RXs;
 	std::ofstream file("log.txt");
 
@@ -307,12 +307,27 @@ vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNo
 					}
 					RXs.erase(it);
 					shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
-					targetNodes.push_back(final);
+
+					// bool alreadyExistInOpenAndNotBetter = 0;
+					// for (auto it = targetNodes.begin(); it != targetNodes.end(); ++it) {
+					// 	if (final->cell != (*it)->cell) continue;
+					// 	cout << "indeed have\n";
+					// 	if (final->f_value >= (*it)->f_value) {
+					// 		cout << "but no\n";
+					// 		alreadyExistInOpenAndNotBetter = 1;
+					// 	} else {
+					// 		cout << "yes\n";
+					// 		targetNodes.erase(it);
+					// 	}
+					// 	break;
+					// }
+					// if (alreadyExistInOpenAndNotBetter) continue;
+					targetNodes.insert(final);
 					targets.erase(t);
 					break;
 				}
 			}
-			if (targets.empty()) return targetNodes;
+			if (RXs.empty()) return targetNodes;
 
 			if (!canGoNext(nowNode->cell, n, net)) {
 				// INVALID: can't go or not belong terminals
@@ -339,14 +354,13 @@ vector<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNo
 
 			bool alreadyExistInOpenAndNotBetter = 0;
 			for (auto it = Open.begin(); it != Open.end(); ++it) {
-				if (neighbor->cell == (*it)->cell) {
-					if (neighbor->f_value >= (*it)->f_value) {
-						alreadyExistInOpenAndNotBetter = 1;
-					} else {
-						Open.erase(it);
-					}
-					break;
+				if (neighbor->cell != (*it)->cell) continue;
+				if (neighbor->f_value >= (*it)->f_value) {
+					alreadyExistInOpenAndNotBetter = 1;
+				} else {
+					Open.erase(it);
 				}
+				break;
 			}
 			if (alreadyExistInOpenAndNotBetter) continue;
 
@@ -430,14 +444,13 @@ shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_
 
 			bool alreadyExistInOpenAndNotBetter = 0;
 			for (auto it = Open.begin(); it != Open.end(); ++it) {
-				if (neighbor->cell == (*it)->cell) {
-					if (neighbor->f_value >= (*it)->f_value) {
-						alreadyExistInOpenAndNotBetter = 1;
-					} else {
-						Open.erase(it);
-					}
-					break;
+				if (neighbor->cell != (*it)->cell) continue;
+				if (neighbor->f_value >= (*it)->f_value) {
+					alreadyExistInOpenAndNotBetter = 1;
+				} else {
+					Open.erase(it);
 				}
+				break;
 			}
 			if (alreadyExistInOpenAndNotBetter) continue;
 
@@ -509,7 +522,6 @@ void A_star_algorithm::addNodesToRXsPath() {
 			nodes.insert(p);
 		}
 	}
-
 	vector<vector<Point>> newRXsPath;
 
 	for (int j = 0; j < RXsPath.size(); ++j) {
@@ -554,30 +566,21 @@ void A_star_algorithm::addNodesToRXsPath() {
 }
 
 void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int index, Point parent) {
-	// bool allPathsProcessed = true;
-    // for (const auto &path : all) {
-    //     if (index == path.size() - 1) {
-    //         allPathsProcessed = false;
-    //         break;
-    //     }
-    // }
-    // if (allPathsProcessed) return;
-	
 	if (all.size() == 1 && all[0].size() - 1 == index) return;
 	++index;
-	cout << "iter: " << index << "\n";
+	// cout << "iter: " << index << "\n";
 	set<Point> nextsFirst;
 	for (const auto &single : all) {
 		nextsFirst.insert(single[index]);
 	}
 
-	cout << "> in index " << index << ", " << nextsFirst.size() << " nums";
-	for (auto const p: nextsFirst) cout << ", " << p;
-	cout << "\n";
+	// cout << "> in index " << index << ", " << nextsFirst.size() << " nums";
+	// for (auto const p: nextsFirst) cout << ", " << p;
+	// cout << "\n";
 
 	for (const auto &p : nextsFirst) {
 		// cout << p << "\n";
-		if (index) cout << parent << "->" << p << "\n";
+		// if (index) cout << parent << "->" << p << "\n";
 		if (index) pathSegments.emplace_back(parent, p);
 		vector<vector<Point>> nexts;
 		for (const auto &single : all) {
@@ -585,10 +588,10 @@ void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int in
 				nexts.push_back(single);
 			}
 		}
-		cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
+		// cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
 		simplifiedSpanningTree(nexts, index, p);
 	}
-	cout << "end of iter " << index << "\n";
+	// cout << "end of iter " << index << "\n";
 	return;
 }
 

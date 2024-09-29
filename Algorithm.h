@@ -54,7 +54,7 @@ public:
 	void handleHasMTsNets(const Net &net);
 	void handleNormalNets(const Net &net);
 	shared_ptr<Node> findPath(shared_ptr<Node>, shared_ptr<Cell>, const Net&);
-	vector<shared_ptr<Node>> findPathRXs(shared_ptr<Node>, vector<shared_ptr<Cell>>, const Net&);
+	set<shared_ptr<Node>> findPathRXs(shared_ptr<Node>, vector<shared_ptr<Cell>>, const Net&);
 
 	bool canGoNext(shared_ptr<Cell>, shared_ptr<Cell>, const Net&);
 	bool directionIntoPort(shared_ptr<Cell>, shared_ptr<Cell>, const Edge&);
