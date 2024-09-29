@@ -18,9 +18,9 @@ bool Node::operator <(const Node &other) const {
 }
 
 void Node::calculate_g(const shared_ptr<Node> &nowNode) {
-    int distance = abs(cell->node.x - nowNode->cell->node.x) + abs(cell->node.y - nowNode->cell->node.y);
-    bool extraTurn = direction != nowNode->direction && nowNode->direction != Direction::O;
-    g_value = nowNode->g_value + distance;
+	int distance = abs(cell->node.x - nowNode->cell->node.x) + abs(cell->node.y - nowNode->cell->node.y);
+	bool extraTurn = direction != nowNode->direction && nowNode->direction != Direction::O;
+	g_value = nowNode->g_value + distance;
 	if (extraTurn) g_value += TURN_COST * (int)(std::pow(turn, 4) - std::pow(turn - 1, 4));
 }
 
@@ -489,7 +489,7 @@ void A_star_algorithm::backTraceFinalPath(shared_ptr<Node> &final, Point s, Poin
 	else path.back() = Point(path.back().x, s.y);
 	path.push_back(s);
 
-    reverse(path.begin(), path.end());
+	reverse(path.begin(), path.end());
 
 	if (t_direction == Direction::VER) path.back() = Point(t.x, path.back().y);
 	else path.back() = Point(path.back().x, t.y);
@@ -519,7 +519,7 @@ void A_star_algorithm::addNodesToRXsPath() {
 	for (int j = 0; j < RXsPath.size(); ++j) {
 		// in a single path
 		// calling newRXsPath[j];
-		newRXsPath[j].push_back(RXsPath[j][0]);
+		newRXsPath.push_back({RXsPath[j][0]}); // error here
 
 		for (int i = 0; i < RXsPath[j].size() - 1; ++i) {
 			// for a single segment of path
@@ -547,8 +547,10 @@ void A_star_algorithm::addNodesToRXsPath() {
 				});
 			}
 
-			for (const auto &p: intersections) newRXsPath[j].push_back(p);
+			for (const auto &p: intersections) newRXsPath.back().push_back(p);
 		}
+    	auto last = std::unique(newRXsPath[j].begin(), newRXsPath[j].end());
+    	newRXsPath[j].erase(last, newRXsPath[j].end());
 	}
 
 	RXsPath.swap(newRXsPath);
@@ -556,25 +558,33 @@ void A_star_algorithm::addNodesToRXsPath() {
 	return;
 }
 
-void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, Point parent, int index) {
+void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int index, Point parent) {
 	if (all[0].size() - 1 == index) return;
 	++index;
+	// cout << "iter: " << index << "\n";
+	set<Point> nextsFirst;
+	for (const auto &single : all) {
+		nextsFirst.insert(single[index]);
+	}
 
-    set<Point> nextsFirst;
-    for (const auto &single : all) {
-        nextsFirst.insert(single[index]);
-    }
+	// cout << "> in index " << index << ", " << nextsFirst.size() << " nums";
+	// for (auto const p: nextsFirst) cout << ", " << p;
+	// cout << "\n";
 
-    for (const auto &p : nextsFirst) {
-        if (index) pathSegments.emplace_back(parent, p);
-        vector<vector<Point>> nexts;
-        for (const auto &single : all) {
-            if (index < single.size() && single[index] == p) {
-                nexts.push_back(single);
-            }
-        }
-        simplifiedSpanningTree(nexts, index);
-    }
+	for (const auto &p : nextsFirst) {
+		// cout << p << "\n";
+		// if (index) cout << parent << "->" << p << "\n";
+		if (index) pathSegments.emplace_back(parent, p);
+		vector<vector<Point>> nexts;
+		for (const auto &single : all) {
+			if (index < single.size() && single[index] == p) {
+				nexts.push_back(single);
+			}
+		}
+		// cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
+		simplifiedSpanningTree(nexts, index, p);
+	}
+	// cout << "end of iter " << index << "\n";
 	return;
 }
 

@@ -61,7 +61,7 @@ public:
 	void backTraceFinalPath(shared_ptr<Node>&, Point, Point);
 	void monotonicPath(Point, Point);
 	void addNodesToRXsPath();
-	void simplifiedSpanningTree(vector<vector<Point>>&, Point = Point(), int = -1);
+	void simplifiedSpanningTree(vector<vector<Point>>&, int = -1, Point = Point());
 	void makePathToSegments(bool);
 };
 

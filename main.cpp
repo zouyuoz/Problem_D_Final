@@ -123,6 +123,28 @@ int main(int argc, char* argv[]) {
 	int totalAmount = net.totalNets.size();
 	set<int> forbiddens;
 
+	algorithm.RXsPath = {
+		{Point(4,4), Point(4,3), Point(7,3)},
+		{Point(4,4), Point(4,3), Point(6,3), Point(6,1)},
+		{Point(4,4), Point(4,1), Point(0,1), Point(0,0)},
+		{Point(4,4), Point(4,1), Point(2,1), Point(2,3)}
+	};
+
+	// algorithm.RXsPath = {
+	// 	{Point(10,10), Point(9,9), Point(6,6)},
+	// 	{Point(10,10), Point(9,9), Point(5,5), Point(3,3)},
+	// 	{Point(10,10), Point(9,9), Point(5,5), Point(2,2)},
+	// 	{Point(10,10), Point(9,9), Point(4,4)},
+	// 	{Point(10,10), Point(8,8)},
+	// 	{Point(10,10), Point(7,7), Point(1,1)},
+	// };
+
+	algorithm.addNodesToRXsPath();
+	algorithm.simplifiedSpanningTree(algorithm.RXsPath);
+	outputNet(algorithm.pathSegments);
+
+	return 0;
+
 	outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
 	outputCell("zzp.csv", chip.allCells);
 
