@@ -117,14 +117,14 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip);
-	int findNet = 363; // 1014 1016
+	int findNet = 748; // 1014 1016
 	int count = 0;
-	int countNor = 0; // 640
+	int countNor = 0; // 640、  49 quit long
 	int countMTs = 0; // 1453
 	int countRXs = 0; // 363, max:1539
 	// 987???
 	int totalAmount = net.totalNets.size();
-	set<int> forbiddens;
+	set<int> forbiddens; // 755
 
 	outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
 	outputCell("zzp.csv", chip.allCells);
@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
 	// return 0;
 
 	for (Net const &n : net.totalNets) {
-		if (n.ID != findNet) continue;
+		// if (n.ID < findNet) continue;
 		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++countNor;
@@ -232,7 +232,8 @@ int main(int argc, char* argv[]) {
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
 		outputNet(PATH);
-		if (n.ID >= findNet) break;
+		// if (n.ID >= findNet) break;
+		// if (countMTs && countRXs && countNor) break;
 	}
 
 	cout << "Done search.\nForbiddens:\n";
