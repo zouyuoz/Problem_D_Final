@@ -90,8 +90,9 @@ shared_ptr<Node> findSmallestFValueNode(const set<shared_ptr<Node>> &open) {
 	return nodeWithSmallestFvalue;
 }
 
-vector<Simple_Edge> A_star_algorithm::getPath(const Net &net) {
-	path = {};
+vector<Simple_Edge> A_star_algorithm::getPath(Net &net) {
+	path.clear();
+	RXsPath.clear();
 	bool hasMTs = net.orderedMTs.size();
 	bool hasRXs = net.RXs.size() > 1;
 
@@ -115,7 +116,7 @@ vector<Simple_Edge> A_star_algorithm::getPath(const Net &net) {
 // repeat this process until the last cellMT finish searching
 // eventually do the algorithm route to the very RX
 // finally, back trace the path and return it
-void A_star_algorithm::handleHasMTsNets(const Net &net) {
+void A_star_algorithm::handleHasMTsNets(Net &net) {
 	Point s = net.TX.coord;
 	Point t = net.RXs[0].coord;
 	shared_ptr<Cell> source = allCells.cellEnclose(s);
@@ -255,7 +256,7 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 }
 
 // use customed h_value
-void A_star_algorithm::handleMultRXNets(const Net &net) {
+void A_star_algorithm::handleMultRXNets(Net &net) {
 	vector<shared_ptr<Cell>> targetCells;
 	for (const auto &rx: net.RXs) {
 		targetCells.push_back(allCells.cellEnclose(rx.coord));
@@ -299,33 +300,33 @@ set<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode,
 
 			auto t = targets.begin();
 			for (; t != targets.end(); ++t) {
-				if (n == *t) {
-					cout << "PATH found!\n";
-					auto it = RXs.begin();
-					for (; it != RXs.end(); ++it) {
-						if (n->enclose((*it).coord)) break;
-					}
-					RXs.erase(it);
-					shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
+				if (n != *t) continue;
+				cout << "PATH found!\n";
 
-					// bool alreadyExistInOpenAndNotBetter = 0;
-					// for (auto it = targetNodes.begin(); it != targetNodes.end(); ++it) {
-					// 	if (final->cell != (*it)->cell) continue;
-					// 	cout << "indeed have\n";
-					// 	if (final->f_value >= (*it)->f_value) {
-					// 		cout << "but no\n";
-					// 		alreadyExistInOpenAndNotBetter = 1;
-					// 	} else {
-					// 		cout << "yes\n";
-					// 		targetNodes.erase(it);
-					// 	}
-					// 	break;
-					// }
-					// if (alreadyExistInOpenAndNotBetter) continue;
-					targetNodes.insert(final);
-					targets.erase(t);
-					break;
+				auto it = RXs.begin();
+				for (; it != RXs.end(); ++it) {
+					if (n->enclose((*it).coord)) break;
 				}
+				RXs.erase(it);
+				shared_ptr<Node> final = nowNode->generateNeighbor(n, file);
+
+				// bool alreadyExistInOpenAndNotBetter = 0;
+				// for (auto it = targetNodes.begin(); it != targetNodes.end(); ++it) {
+				// 	if (final->cell != (*it)->cell) continue;
+				// 	cout << "indeed have\n";
+				// 	if (final->f_value >= (*it)->f_value) {
+				// 		cout << "but no\n";
+				// 		alreadyExistInOpenAndNotBetter = 1;
+				// 	} else {
+				// 		cout << "yes\n";
+				// 		targetNodes.erase(it);
+				// 	}
+				// 	break;
+				// }
+				// if (alreadyExistInOpenAndNotBetter) continue;
+				targetNodes.insert(final);
+				targets.erase(t);
+				break;
 			}
 			if (RXs.empty()) return targetNodes;
 
@@ -373,7 +374,7 @@ set<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode,
 	return targetNodes;
 }
 
-void A_star_algorithm::handleNormalNets(const Net &net) {
+void A_star_algorithm::handleNormalNets(Net &net) {
 	Point s = net.TX.coord;
 	Point t = net.RXs[0].coord;
 
@@ -520,48 +521,69 @@ void A_star_algorithm::addNodesToRXsPath() {
 	for (const auto &path: RXsPath) {
 		for (const auto &p: path) {
 			nodes.insert(p);
+			// cout << p << "\n";
 		}
+		// cout << "\n";
 	}
 	vector<vector<Point>> newRXsPath;
 
-	for (int j = 0; j < RXsPath.size(); ++j) {
+	for (auto const &rxPath: RXsPath) {
+		if (!rxPath.size()) continue;
 		// in a single path
 		// calling newRXsPath[j];
-		newRXsPath.push_back({RXsPath[j][0]}); // error here
+		vector<Point> newPath = { rxPath[0] };
 
-		for (int i = 0; i < RXsPath[j].size() - 1; ++i) {
+		for (int i = 0; i < rxPath.size() - 1; ++i) {
+			if (rxPath[i] == rxPath[i + 1]) continue;
 			// for a single segment of path
-			vector<Point> intersections = { RXsPath[j][i + 1] };
+			// cout << rxPath[i] << "->" << rxPath[i + 1] << "\n";
+			vector<Point> intersections = { rxPath[i + 1] };
 			for (const auto &n: nodes) {
-				if (
-					std::min(RXsPath[j][i].x, RXsPath[j][i + 1].x) <= n.x
-					&& std::max(RXsPath[j][i].x, RXsPath[j][i + 1].x) >= n.x
-					&& std::min(RXsPath[j][i].y, RXsPath[j][i + 1].y) <= n.y
-					&& std::max(RXsPath[j][i].y, RXsPath[j][i + 1].y) >= n.y
+				if (std::min(rxPath[i].x, rxPath[i + 1].x) <= n.x
+					&& std::max(rxPath[i].x, rxPath[i + 1].x) >= n.x
+					&& std::min(rxPath[i].y, rxPath[i + 1].y) <= n.y
+					&& std::max(rxPath[i].y, rxPath[i + 1].y) >= n.y
 				) {
 					intersections.push_back(n);
 				}
 			}
 
-			if (RXsPath[j][i] < RXsPath[j][i + 1]) {
-				std::sort(intersections.begin(), intersections.end(),
-				[](const Point &a, const Point &b) {
-					return a < b;
-				});
+			if (rxPath[i] < rxPath[i + 1]) {
+				std::sort(
+					intersections.begin(),intersections.end(),
+					[](const Point &a, const Point &b) {
+						return a < b;
+					}
+				);
 			} else {
-				std::sort(intersections.begin(), intersections.end(),
-				[](const Point &a, const Point &b) {
-					return b < a;
-				});
+				std::sort(
+					intersections.begin(), intersections.end(),
+					[](const Point &a, const Point &b) {
+						return b < a;
+					}
+				);
 			}
-
-			for (const auto &p: intersections) newRXsPath.back().push_back(p);
+			
+			for (const auto &p: intersections) {
+				newPath.push_back(p);
+				// cout << "+ " << p << "\n";
+			}
 		}
-    	auto last = std::unique(newRXsPath[j].begin(), newRXsPath[j].end());
-    	newRXsPath[j].erase(last, newRXsPath[j].end());
+    	auto last = std::unique(newPath.begin(), newPath.end());
+    	newPath.erase(last, newPath.end());
+		newRXsPath.push_back(std::move(newPath));
 	}
 	RXsPath.swap(newRXsPath);
 	newRXsPath.clear();
+	// cout  << "RXsPath.size(): " << RXsPath.size() << "\n";
+	// for (const auto &path: RXsPath) {
+	// 	for (const auto &p: path) {
+	// 		nodes.insert(p);
+	// 		cout << p << "\n";
+	// 	}
+	// 	cout << "\n";
+	// }
+
 	return;
 }
 

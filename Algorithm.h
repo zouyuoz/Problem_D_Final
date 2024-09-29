@@ -49,10 +49,10 @@ public:
 	vector<vector<Point>> RXsPath;
 	vector<Simple_Edge> pathSegments;
 
-	vector<Simple_Edge> getPath(const Net &net);
-	void handleMultRXNets(const Net &net);
-	void handleHasMTsNets(const Net &net);
-	void handleNormalNets(const Net &net);
+	vector<Simple_Edge> getPath(Net &net);
+	void handleMultRXNets(Net &net);
+	void handleHasMTsNets(Net &net);
+	void handleNormalNets(Net &net);
 	shared_ptr<Node> findPath(shared_ptr<Node>, shared_ptr<Cell>, const Net&);
 	set<shared_ptr<Node>> findPathRXs(shared_ptr<Node>, vector<shared_ptr<Cell>>, const Net&);
 
