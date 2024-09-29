@@ -254,11 +254,7 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	return 0;
 }
 
-// should record every Node through found_Path
-// and every Node could be the new TX of other RXs
-// so how do we do that, well I don't know lol
-// maybe we could try this method and the old one
-// and compare which one is more optimized
+// use customed h_value
 void A_star_algorithm::handleMultRXNets(const Net &net) {
 	vector<shared_ptr<Cell>> targetCells;
 	for (const auto &rx: net.RXs) {
@@ -279,11 +275,6 @@ void A_star_algorithm::handleMultRXNets(const Net &net) {
 		}
 		backTraceFinalPath(thisTarget, net.TX.coord, thisRX);
 		RXsPath.push_back(std::move(path));
-	}
-	for (auto const &v: RXsPath) {
-		cout << "\n{";
-		for (auto const &p: v) cout << p << ",";
-		cout << "},";
 	}
 	return;
 }
