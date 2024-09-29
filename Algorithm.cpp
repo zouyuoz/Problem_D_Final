@@ -588,32 +588,35 @@ void A_star_algorithm::addNodesToRXsPath() {
 }
 
 void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int index, Point parent) {
-	if (all.size() == 1 && all[0].size() - 1 == index) return;
+	if (all.size() == 1 && all[0].size() - 1 <= index) return;
 	++index;
-	// cout << "iter: " << index << "\n";
+	cout << "iter: " << index << "\n";
 	set<Point> nextsFirst;
 	for (const auto &single : all) {
 		nextsFirst.insert(single[index]);
 	}
 
-	// cout << "> in index " << index << ", " << nextsFirst.size() << " nums";
-	// for (auto const p: nextsFirst) cout << ", " << p;
-	// cout << "\n";
+	cout << "> in index " << index << ", " << nextsFirst.size() << " nums:\n";
+	for (auto const p: nextsFirst) cout << "> " << p << "\n";
 
-	for (const auto &p : nextsFirst) {
-		// cout << p << "\n";
-		// if (index) cout << parent << "->" << p << "\n";
-		if (index) pathSegments.emplace_back(parent, p);
-		vector<vector<Point>> nexts;
-		for (const auto &single : all) {
-			if (index < single.size() && single[index] == p) {
-				nexts.push_back(single);
-			}
-		}
-		// cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
-		simplifiedSpanningTree(nexts, index, p);
-	}
-	// cout << "end of iter " << index << "\n";
+	cout << "in nextFirst:\n";
+	/*+--------------------------------+*/
+	/*|This entire shit should be fixed|*/
+	/*+--------------------------------+*/
+	// for (const auto &p : nextsFirst) {
+	// 	cout << "> " << p << ":\n";
+	// 	if (index) cout << parent << "->" << p << "\n";
+	// 	if (index) pathSegments.emplace_back(parent, p);
+	// 	vector<vector<Point>> nexts;
+	// 	for (const auto &single : all) {
+	// 		if (index < single.size() && single[index] == p) {
+	// 			nexts.push_back(single);
+	// 		}
+	// 	}
+	// 	cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
+	// 	simplifiedSpanningTree(nexts, index, p);
+	// }
+	cout << "end of iter " << index << "\n";
 	return;
 }
 
