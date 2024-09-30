@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip, tracks_um);
-	int findNet = 269; // 1014 1016
+	int findNet = 363; // 1014 1016
 	int count = 0;
 	int countNor = 0; // 640, 49 quit long
 	int countMTs = 0; // 269, 1453
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
 	std::ofstream rpt("case0" + std::to_string(testCase) + "_net.rpt");
 
 	for (Net &n : net.totalNets) {
-		// if (n.ID < findNet) continue;
+		if (n.ID < findNet) continue;
 		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++countNor;
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 		outputNet(PATH);
 		outputRPT(n, testCase);
 		// if (n.ID >= findNet) break;
-		// if (countMTs && countRXs && countNor) break;
+		if (countMTs && countRXs && countNor) break;
 	}
 
 	cout << "Done search.\nForbiddens:\n";
