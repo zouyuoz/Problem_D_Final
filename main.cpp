@@ -113,11 +113,10 @@ int main(int argc, char* argv[]) {
 	net.ParserAllNets(testCase, chip);
 	
 	int tracks_um = std::stoi(argv[1]);
-	int cellWidth = chip.UNITS_DISTANCE_MICRONS * (net.max_net_num / tracks_um);
 	chip.initializeAllCell(net);
 
-	A_star_algorithm algorithm(chip);
-	int findNet = 182; // 1014 1016
+	A_star_algorithm algorithm(chip, tracks_um);
+	int findNet = 180; // 1014 1016
 	int count = 0;
 	int countNor = 0; // 640, 49 quit long
 	int countMTs = 0; // 1453
@@ -136,7 +135,8 @@ int main(int argc, char* argv[]) {
 		else ++countNor;
 
 		// if (n.bBoxArea()) continue;
-		if (n.RXs.size() == 1) continue;
+		// if (n.RXs.size() == 1) continue;
+		// if (count > 10) continue;
 
 		++count;
 		cout << n.ID << ": size: " << n.RXs.size() + n.orderedMTs.size();

@@ -30,6 +30,7 @@ Chip::Chip(int const &testCase) {
 		if (lineNumber == 7) {
 			std::istringstream iss(line);
 			iss >> temp >> temp >> temp >> UNITS_DISTANCE_MICRONS;
+			Cell::unitsDistanceUm = UNITS_DISTANCE_MICRONS;
 		}
 
 		// get borders

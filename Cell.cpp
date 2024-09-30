@@ -3,8 +3,19 @@
 
 bool debugInfoCell = 0;
 
+int Cell::unitsDistanceUm = 2000;
+int Cell::tracks_um = 50;
+
 Cell::Cell(Pair X, Pair Y): x(X), y(Y) {
-	node = Point((x.min + x.max) / 2, (y.min + y.max) / 2);
+	node = Point(x.min, y.min);
+}
+
+bool Cell::valid(int net_num, bool isVertical) {
+	if (isVertical) {
+		return (x.max > node.x + (unitsDistanceUm / tracks_um) * net_num);
+	} else {
+		return (y.max > node.y + (unitsDistanceUm / tracks_um) * net_num);
+	}
 }
 
 bool Cell::inBlock() { return !(block == nullptr); }
@@ -15,15 +26,6 @@ bool Cell::inNonfeed() {
 }
 
 bool Cell::enclose(const Point &p) { return p.x >= x.min && p.x <= x.max && p.y >= y.min && p.y <= y.max; }
-
-bool Cell::canGo(const shared_ptr<Cell>& other) { // now abandoned
-	if (!other->valid()) return 0;
-	// if (isBPR || other->isBPR) return 1;
-	if (other->block) {
-		if (!inNonfeed() && other->block->is_feedthroughable) return 1;
-	}
-	return (block == other->block);
-}
 
 bool Cell::capacityEnough(int net_num) {
 	if (!block) return 1;
@@ -89,6 +91,14 @@ bool Cell::EdgeBelongs2Cell(const Edge &e) {
 		&& e.ranged().max >= x.max && e.ranged().min <= x.min;
 
 	return (edgeIsVertical || edgeIsHorizontal) && (e.block == block);
+}
+
+void Cell::modifiedNode(int net_num, bool isVertical) {
+	if (isVertical) {
+		node.x += 40 * net_num;
+	} else {
+		node.y += 40 * net_num;
+	}
 }
 
 void Cell_Manager::createCells(

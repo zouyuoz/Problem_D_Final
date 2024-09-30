@@ -37,9 +37,10 @@ void Node::calculate_f() {
 	return;
 }
 
-A_star_algorithm::A_star_algorithm(Chip &caseChip) {
+A_star_algorithm::A_star_algorithm(Chip &caseChip, int &tracks_per_um) {
 	chip = caseChip;
 	allCells = caseChip.allCells;
+	Cell::tracks_um = tracks_per_um;
 	return;
 }
 
@@ -95,7 +96,7 @@ vector<Simple_Edge> A_star_algorithm::getPath(Net &net) {
 	RXsPath.clear();
 	bool hasMTs = net.orderedMTs.size();
 	bool hasRXs = net.RXs.size() > 1;
-
+	
 	if (hasMTs) {
 		handleHasMTsNets(net);
 	} else if (hasRXs) {
@@ -105,6 +106,7 @@ vector<Simple_Edge> A_star_algorithm::getPath(Net &net) {
 	}
 
 	makePathToSegments(hasRXs);
+	net.path = pathSegments;
 	return std::move(pathSegments);
 }
 
@@ -166,7 +168,8 @@ bool checkPathIncludeAllMTs(const shared_ptr<Node> &path, const Net &net) {
 }
 
 bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> nextCell, const Net &net) {
-	if (!nextCell->valid()) return 0;							// can't go to an invalid cell, no matter what
+	// can't go to an invalid cell, no matter what
+	if (!nextCell->valid(net.num, !(nowCell->node.x - nextCell->node.x))) return 0;
 
 	bool notMTBlocks = 1;
 	for (const auto &netMt: net.orderedMTs) {
@@ -219,8 +222,7 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 				if (nowCell->block == net.TX.block) return 1;
 			}
 		}
-	}
-	else {
+	}else {
 		if (nextCell->inBlock()) { // enter a block
 			bool isLeavingMTBlock = 0;
 			for (const auto &netMt: net.orderedMTs) {
@@ -255,6 +257,12 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	return 0;
 }
 
+bool A_star_algorithm::directionIntoPort(shared_ptr<Cell> nowCell, shared_ptr<Cell> nextCell, const Edge& e) {
+	bool directionNext = !(nowCell->node.x - nextCell->node.x);
+	if (directionNext != e.isVertical()) return 1;
+	else return 0;
+}
+
 // use customed h_value
 void A_star_algorithm::handleMultRXNets(Net &net) {
 	vector<shared_ptr<Cell>> targetCells;
@@ -281,7 +289,6 @@ void A_star_algorithm::handleMultRXNets(Net &net) {
 }
 
 set<shared_ptr<Node>> A_star_algorithm::findPathRXs(shared_ptr<Node> sourceNode, vector<shared_ptr<Cell>> targets, const Net &net) {
-	path = {};
 	set<shared_ptr<Node>> targetNodes;
 	auto RXs = net.RXs;
 	std::ofstream file("log.txt");
@@ -399,7 +406,6 @@ void A_star_algorithm::handleNormalNets(Net &net) {
 }
 
 shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_ptr<Cell> target, const Net &net) {
-	path = {};
 	std::ofstream file("log.txt");
 
 	set<shared_ptr<Node>> Open = { sourceNode };
@@ -463,12 +469,6 @@ shared_ptr<Node> A_star_algorithm::findPath(shared_ptr<Node> sourceNode, shared_
 	file.close();
 	cout << "PATH NOT found!\n";
 	return nullptr;
-}
-
-bool A_star_algorithm::directionIntoPort(shared_ptr<Cell> nowCell, shared_ptr<Cell> nextCell, const Edge& e) {
-	bool directionNext = !(nowCell->node.x - nextCell->node.x);
-	if (directionNext != e.isVertical()) return 1;
-	else return 0;
 }
 
 void A_star_algorithm::backTraceFinalPath(shared_ptr<Node> &final, Point s, Point t) {
@@ -576,13 +576,13 @@ void A_star_algorithm::addNodesToRXsPath() {
 	RXsPath.swap(newRXsPath);
 	newRXsPath.clear();
 	// cout  << "RXsPath.size(): " << RXsPath.size() << "\n";
-	// for (const auto &path: RXsPath) {
-	// 	for (const auto &p: path) {
-	// 		nodes.insert(p);
-	// 		cout << p << "\n";
-	// 	}
-	// 	cout << "\n";
-	// }
+	for (const auto &path: RXsPath) {
+		for (const auto &p: path) {
+			nodes.insert(p);
+			// cout << p << "\n";
+		}
+		// cout << "\n";
+	}
 
 	return;
 }
@@ -590,33 +590,31 @@ void A_star_algorithm::addNodesToRXsPath() {
 void A_star_algorithm::simplifiedSpanningTree(vector<vector<Point>> &all, int index, Point parent) {
 	if (all.size() == 1 && all[0].size() - 1 <= index) return;
 	++index;
-	cout << "iter: " << index << "\n";
+	// cout << "iter: " << index << "\n";
 	set<Point> nextsFirst;
 	for (const auto &single : all) {
 		nextsFirst.insert(single[index]);
 	}
 
-	cout << "> in index " << index << ", " << nextsFirst.size() << " nums:\n";
-	for (auto const p: nextsFirst) cout << "> " << p << "\n";
+	// cout << "> in index " << index << ", " << nextsFirst.size() << " nums:\n";
+	// for (auto const p: nextsFirst) cout << "> " << p << "\n";
 
-	cout << "in nextFirst:\n";
-	/*+--------------------------------+*/
-	/*|This entire shit should be fixed|*/
-	/*+--------------------------------+*/
-	// for (const auto &p : nextsFirst) {
-	// 	cout << "> " << p << ":\n";
-	// 	if (index) cout << parent << "->" << p << "\n";
-	// 	if (index) pathSegments.emplace_back(parent, p);
-	// 	vector<vector<Point>> nexts;
-	// 	for (const auto &single : all) {
-	// 		if (index < single.size() && single[index] == p) {
-	// 			nexts.push_back(single);
-	// 		}
-	// 	}
-	// 	cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
-	// 	simplifiedSpanningTree(nexts, index, p);
-	// }
-	cout << "end of iter " << index << "\n";
+	// cout << "in nextFirst:\n";
+	for (const auto &p : nextsFirst) {
+		// cout << "> " << p << ":\n";
+		// if (index) cout << parent << "->" << p << "\n";
+		if (index) pathSegments.emplace_back(parent, p);
+		vector<vector<Point>> nexts;
+		for (const auto &single : all) {
+			// cout << "> > single size: " << single.size() << "\n";
+			if (index + 1 < single.size() && single[index] == p) {
+				nexts.push_back(single);
+			}
+		}
+		// cout << nexts.size() << " vectors' " << index << "th num is " << p << "\n";
+		simplifiedSpanningTree(nexts, index, p);
+	}
+	// cout << "end of iter " << index << "\n";
 	return;
 }
 

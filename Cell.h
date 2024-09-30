@@ -20,15 +20,18 @@ public:
 	Cell(){}
 	Cell(Pair, Pair);
 	Cell(const Cell &other);
+	static int unitsDistanceUm;
+	static int tracks_um;
 
     Pair x, y;
 	int xIndex, yIndex;
 	shared_ptr<Block> block = nullptr;
 
 	Point node;
+	void modifiedNode(int, bool);
 	bool inBlock();
 	bool inNonfeed();
-	bool valid() { return 1; /*TODO*/ }
+	bool valid(int, bool);
 	Edge BPR;
 	shared_ptr<EdgeNetNum> TBENN;
 	vector<Edge> someNetsMTs;
@@ -38,7 +41,6 @@ public:
     bool enclose(const Point&);
 	void checkInsideBlock(vector<shared_ptr<Block>>);
 	bool EdgeBelongs2Cell(const Edge &e);
-	bool canGo(const shared_ptr<Cell>&);
 	bool capacityEnough(int);
 
     bool operator <=(const Cell &other) const;

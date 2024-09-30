@@ -44,7 +44,7 @@ private:
 	Chip chip;
 	Cell_Manager allCells;
 public:
-	A_star_algorithm(Chip &caseChip);
+	A_star_algorithm(Chip &caseChip, int &tracks_per_um);
 	vector<Point> path;
 	vector<vector<Point>> RXsPath;
 	vector<Simple_Edge> pathSegments;

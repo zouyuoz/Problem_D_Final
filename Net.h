@@ -25,7 +25,7 @@ public:
 	vector<Edge> HMFT_MUST_THROUGHs;
 	vector<Edge> orderedMTs;
 
-	vector<Point> path;
+	vector<Simple_Edge> path;
 
 	Edge bBox;
 	void getBBox();
