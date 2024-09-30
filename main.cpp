@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <memory>
 #include <ostream>
+#include <string>
 //#include <filesystem>
 
 bool debugInfo = 0;
@@ -105,6 +106,17 @@ void outputNet(vector<Simple_Edge> path) {
 	return;
 }
 
+void outputRPT(Net net, int CASE) {
+	std::ofstream file("case0" + std::to_string(CASE) + "_net.rpt", std::ios::app);
+	file << "[ID " << net.ID << "]\n";
+	for (const auto &segment: net.path) {
+		file << "(" << segment.p1.x << ", " << segment.p1.y << "), ";
+		file << "(" << segment.p2.x << ", " << segment.p2.y << ")\n";
+	}
+	file.close();
+	return;
+}
+
 int main(int argc, char* argv[]) {
 	int testCase = 0;
 
@@ -116,10 +128,10 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip, tracks_um);
-	int findNet = 180; // 1014 1016
+	int findNet = 269; // 1014 1016
 	int count = 0;
 	int countNor = 0; // 640, 49 quit long
-	int countMTs = 0; // 1453
+	int countMTs = 0; // 269, 1453
 	int countRXs = 0; // 363, max:1539
 	// 987???
 	int totalAmount = net.totalNets.size();
@@ -127,15 +139,18 @@ int main(int argc, char* argv[]) {
 
 	outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
 	outputCell("zzp.csv", chip.allCells);
+	// refresh rpt file
+	std::ofstream rpt("case0" + std::to_string(testCase) + "_net.rpt");
 
 	for (Net &n : net.totalNets) {
-		if (n.ID < findNet) continue;
+		// if (n.ID < findNet) continue;
 		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++countNor;
 
 		// if (n.bBoxArea()) continue;
 		// if (n.RXs.size() == 1) continue;
+		// if (!n.orderedMTs.size()) continue;
 		// if (count > 10) continue;
 
 		++count;
@@ -145,7 +160,8 @@ int main(int argc, char* argv[]) {
 		auto PATH = algorithm.getPath(n);
 		if (!PATH.size()) forbiddens.insert(n.ID);
 		outputNet(PATH);
-		if (n.ID >= findNet) break;
+		outputRPT(n, testCase);
+		// if (n.ID >= findNet) break;
 		// if (countMTs && countRXs && countNor) break;
 	}
 

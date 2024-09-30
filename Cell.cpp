@@ -7,10 +7,11 @@ int Cell::unitsDistanceUm = 2000;
 int Cell::tracks_um = 50;
 
 Cell::Cell(Pair X, Pair Y): x(X), y(Y) {
-	node = Point(x.min, y.min);
+	node = Point((x.min + (x.max - x.min) / 2), y.min + (y.max - y.min) / 2);
 }
 
 bool Cell::valid(int net_num, bool isVertical) {
+	return 1; /*todo*/
 	if (isVertical) {
 		return (x.max > node.x + (unitsDistanceUm / tracks_um) * net_num);
 	} else {
@@ -75,19 +76,25 @@ void Cell_Manager::setXYvalue(set<int> X_value, set<int> Y_value) {
 
 void Cell::checkInsideBlock(vector<shared_ptr<Block>> blocks) {
 	for (auto const &o: blocks) {
-		if (o->enclose(node)) { block = o; return;}
+		if (o->enclose(Point((x.min + (x.max - x.min) / 2), y.min + (y.max - y.min) / 2))) {
+			block = o;
+			return;
+		}
 	}
 	block = nullptr;
 	return;
 }
 
+bool twoEqual(int a, int b) {
+	return (a - b >= -2) && (a - b <= 2);
+}
 bool Cell::EdgeBelongs2Cell(const Edge &e) {
 	bool edgeIsVertical = e.isVertical()
-		&& (e.fixed() == x.min || e.fixed() == x.max)
+		&& (twoEqual(e.fixed(), x.min) || twoEqual(e.fixed(), x.max))
 		&& e.ranged().max >= y.max && e.ranged().min <= y.min;
 
 	bool edgeIsHorizontal = !e.isVertical()
-		&& (e.fixed() == y.min || e.fixed() == y.max)
+		&& (twoEqual(e.fixed(), y.min) || twoEqual(e.fixed(), y.max))
 		&& e.ranged().max >= x.max && e.ranged().min <= x.min;
 
 	return (edgeIsVertical || edgeIsHorizontal) && (e.block == block);
@@ -145,17 +152,18 @@ shared_ptr<Cell> Cell_Manager::cellsOnVertex(const Point &p, const Edge &e) {
 	set<shared_ptr<Cell>> cellsOnPoint;
 	int x_index = 0, y_index = 0;
 
-	for (auto it = x_value.begin(); it != x_value.end(); ++it, ++x_index) { if (*it == p.x) break; }
-	for (auto it = y_value.begin(); it != y_value.end(); ++it, ++y_index) { if (*it == p.y) break; }
-
+	for (auto it = x_value.begin(); it != x_value.end(); ++it, ++x_index) {
+		if (*it == p.x) break;
+	}
+	for (auto it = y_value.begin(); it != y_value.end(); ++it, ++y_index) {
+		if (*it == p.y) break;
+	}
 	cellsOnPoint.insert(cells[x_index][y_index]);
 	cellsOnPoint.insert(cells[x_index][y_index - 1]);
 	cellsOnPoint.insert(cells[x_index - 1][y_index]);
 	cellsOnPoint.insert(cells[x_index - 1][y_index - 1]);
 
 	for (auto const &cell: cellsOnPoint) {
-		if (!cell->isSomeNetsMT()) continue;
-		bool foundCell = 0;
 		for (auto const mt: cell->someNetsMTs) {
 			if (mt == e) { return cell; }
 		}

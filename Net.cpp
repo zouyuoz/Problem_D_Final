@@ -181,9 +181,7 @@ void Cell_Manager::createCells(
 				if (tempCell.EdgeBelongs2Cell(e)) tempCell.TBENN = enn;
 			}
 			for (auto const &e: net.allOrderedMTs) {
-				if (tempCell.EdgeBelongs2Cell(e)) {
-					tempCell.someNetsMTs.push_back(e);
-				}
+				if (tempCell.EdgeBelongs2Cell(e)) tempCell.someNetsMTs.push_back(e);
 			}
 			tempCell.xIndex = x_count;
 			tempCell.yIndex = ++y_count;

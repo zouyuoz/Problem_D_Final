@@ -77,7 +77,7 @@ public:
 		return *this;
 	}
 	friend std::ostream& operator <<(std::ostream &os, const Edge &e) {
-		os << "(" << e.p1.x << ", " << e.p1.y << "),(" << e.p2.x << ", " << e.p2.x << ")";
+		os << "(" << e.p1.x << ", " << e.p1.y << "),(" << e.p2.x << ", " << e.p2.y << ")";
 		return os; 
 	}
 };
