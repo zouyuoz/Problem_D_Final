@@ -171,13 +171,13 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 	// can't go to an invalid cell, no matter what
 	if (!nextCell->valid(net.num, !(nowCell->node.x - nextCell->node.x))) return 0;
 
-	bool notMTBlocks = 1;
+	bool hasMTBlocks = 0;
 	for (const auto &netMt: net.orderedMTs) {
-		if (nowCell->block == netMt.block) notMTBlocks = 0;
-		if (nextCell->block == netMt.block) notMTBlocks = 0;
+		if (nowCell->block == netMt.block) hasMTBlocks = 1;
+		if (nextCell->block == netMt.block) hasMTBlocks = 1;
 	}
 
-	if (notMTBlocks) {
+	if (!hasMTBlocks) {
 		if (nowCell->isBPR() || nextCell->isBPR()) {			// BPR cells could be passable
 			// direction should be considered
 			Edge BPR = nowCell->isBPR() ? nowCell->BPR : nextCell->BPR;
@@ -191,30 +191,15 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 		}
 	}
 
-	bool showde = 0;
-
 	if (nowCell->inBlock()) {
 		if (nextCell->inBlock()) return nowCell->block == nextCell->block;
 		else { // exit a block
-			bool isLeavingMTBlock = 0;
-			for (const auto &netMt: net.orderedMTs) {
-				if (nowCell->block == netMt.block) {
-					isLeavingMTBlock = 1;
-					if (showde) cout << "leaveMT " << netMt.block->name;
-					break;
-				}
-			}
-			if (isLeavingMTBlock) {
+			if(hasMTBlocks) {
 				for (const auto &cellMt: nowCell->someNetsMTs) {
-					if (showde) cout << "\n - cellMT: " << cellMt.netID;
 					if (cellMt.netID == net.ID) {
-						if (directionIntoPort(nowCell, nextCell, cellMt)) {
-							if (showde) cout << "...o\n";
-							return 1;
-						}
+						if (directionIntoPort(nowCell, nextCell, cellMt)) return 1;
 					}
 				}
-				if (showde) cout << "...x\n";
 				return 0;
 			}
 			if (nowCell->block->noPort()) {
@@ -222,27 +207,14 @@ bool A_star_algorithm::canGoNext(shared_ptr<Cell> nowCell, shared_ptr<Cell> next
 				if (nowCell->block == net.TX.block) return 1;
 			}
 		}
-	}else {
+	} else {
 		if (nextCell->inBlock()) { // enter a block
-			bool isLeavingMTBlock = 0;
-			for (const auto &netMt: net.orderedMTs) {
-				if (nextCell->block == netMt.block) {
-					isLeavingMTBlock = 1;
-					if (showde) cout << "enterMT " << netMt.block->name;
-					break;
-				}
-			}
-			if (isLeavingMTBlock) {
+			if (hasMTBlocks) {
 				for (const auto &cellMt: nextCell->someNetsMTs) {
-					if (showde) cout << "\n - cellMT: " << cellMt.netID;
 					if (cellMt.netID == net.ID) {
-						if (directionIntoPort(nowCell, nextCell, cellMt)) {
-							if (showde) cout << "...o\n";
-							return 1;
-						}
+						if (directionIntoPort(nowCell, nextCell, cellMt)) return 1;
 					}
 				}
-				if (showde) cout << "...x\n";
 				return 0;
 			}
 			if (nextCell->block->noPort()) {

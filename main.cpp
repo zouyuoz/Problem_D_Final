@@ -110,8 +110,8 @@ void outputRPT(Net net, int CASE) {
 	std::ofstream file("case0" + std::to_string(CASE) + "_net.rpt", std::ios::app);
 	file << "[ID " << net.ID << "]\n";
 	for (const auto &segment: net.path) {
-		file << "(" << segment.p1.x << ", " << segment.p1.y << "), ";
-		file << "(" << segment.p2.x << ", " << segment.p2.y << ")\n";
+		file << "(" << segment.p1.x << "," << segment.p1.y << "),";
+		file << "(" << segment.p2.x << "," << segment.p2.y << ")\n";
 	}
 	file.close();
 	return;
@@ -128,9 +128,9 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip, tracks_um);
-	int findNet = 363; // 1014 1016
+	int findNet = 1600; // 1014 1016
 	int count = 0;
-	int countNor = 0; // 640, 49 quit long
+	int countNor = 0; // 640, 49 quite long
 	int countMTs = 0; // 269, 1453
 	int countRXs = 0; // 363, max:1539
 	// 987???
@@ -149,9 +149,8 @@ int main(int argc, char* argv[]) {
 		else ++countNor;
 
 		// if (n.bBoxArea()) continue;
-		// if (n.RXs.size() == 1) continue;
+		// if (n.RXs.size() <3) continue;
 		// if (!n.orderedMTs.size()) continue;
-		// if (count > 10) continue;
 
 		++count;
 		cout << n.ID << ": size: " << n.RXs.size() + n.orderedMTs.size();
@@ -162,7 +161,7 @@ int main(int argc, char* argv[]) {
 		outputNet(PATH);
 		outputRPT(n, testCase);
 		// if (n.ID >= findNet) break;
-		if (countMTs && countRXs && countNor) break;
+		// if (countMTs && countRXs && countNor) break;
 	}
 
 	cout << "Done search.\nForbiddens:\n";
