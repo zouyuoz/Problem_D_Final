@@ -45,7 +45,7 @@ public:
 
     bool operator <=(const Cell &other) const;
 	bool operator <(const Cell &other) const;
-	Cell& operator=(const Cell& other);
+	Cell& operator =(const Cell& other);
     friend std::ostream& operator<<(std::ostream& os, const Cell& b);
 };
 
@@ -56,7 +56,6 @@ public:
 	Cell_Manager() {}
 	map<int, map<int, shared_ptr<Cell>>> cells;
 	void setXYvalue(set<int>, set<int>);
-	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, int, Point);
 	void createCells(const vector<shared_ptr<Block>>&, const vector<Edge>&, const vector<shared_ptr<EdgeNetNum>>&, const Net_Manager);
 	shared_ptr<Cell> cellEnclose(const Point&);
 	shared_ptr<Cell> cellsOnVertex(const Point&, const Edge&);
@@ -69,11 +68,6 @@ public:
 	Terminal() {}
 	Terminal(string Name, Point Coord): name(Name), coord(Coord) {}
 	Terminal(shared_ptr<Block> b): name(b->name), coord(Point(0,0)), block(b) {}
-	// Terminal(Terminal const &other) {
-	// 	name = other.name;
-	// 	coord = other.coord;
-	// 	block = other.block;
-	// }
 	string name;
 	Point coord;
 	shared_ptr<Block> block = nullptr;

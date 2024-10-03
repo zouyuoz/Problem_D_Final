@@ -108,41 +108,15 @@ void Cell::modifiedNode(int net_num, bool isVertical) {
 	}
 }
 
-void Cell_Manager::createCells(
-	const vector<shared_ptr<Block>> &allBlocks,
-	const vector<Edge> &allBPRs,
-	const vector<shared_ptr<EdgeNetNum>> &allTBENNs,
-	int cellWidth,
-	Point border
-) {
-	for (int i = 0, x_count = 0; i < border.x; i += cellWidth, ++x_count) {
-		for (int j = 0, y_count = 0; j < border.y; j += cellWidth, ++y_count) {
-			Cell tempCell(Pair(i, i + cellWidth), Pair(j, j + cellWidth));
-			tempCell.checkInsideBlock(allBlocks);
-
-			for (auto const &e: allBPRs) {
-				if (e.block == tempCell.block && tempCell.EdgeBelongs2Cell(e)) tempCell.BPR = e;
-			}
-			for (auto const &enn: allTBENNs) {
-				const Edge e = enn->edge;
-				if (e.block == tempCell.block && tempCell.EdgeBelongs2Cell(e)) tempCell.TBENN = enn;
-			}
-			tempCell.xIndex = x_count;
-			tempCell.yIndex = y_count;
-			cells[x_count][y_count] = std::make_shared<Cell>(tempCell);
-		}
-	}
-}
-
 shared_ptr<Cell> Cell_Manager::cellEnclose(const Point &p) {
 	int x_index = -1, y_index = -1;
 
 	for (auto it = x_value.begin(); it != x_value.end(); ++it, ++x_index) {
-		if (*it >= p.x) break; // probably
+		if (*it >= p.x) break;
 	}
 
 	for (auto it = y_value.begin(); it != y_value.end(); ++it, ++y_index) {
-		if (*it >= p.y) break; // probably
+		if (*it >= p.y) break;
 	}
 
 	return cells[x_index][y_index];

@@ -30,7 +30,6 @@ public:
 	void calculate_h(const vector<Terminal>&);
 	void calculate_f();
 
-	void outputTemporaryPath();
 	shared_ptr<Node> generateNeighbor(const shared_ptr<Cell>&, std::ofstream&);
 
 	bool operator <(const Node &other) const;

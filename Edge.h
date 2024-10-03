@@ -17,12 +17,6 @@ public:
 	Point p1, p2;
 	Simple_Edge(): p1(), p2() {}
 	Simple_Edge(Point first, Point second): p1(first), p2(second) {}
-	// bool operator <(const Simple_Edge &other) const {
-	// 	// use for simplified spanning tree
-	// 	// use set so that Simple_Edge will not repeat
-    //     if (!(first == other.first)) return first < other.first;
-    //     return second < other.second;
-	// }
 };
 
 class Edge : public Simple_Edge, public std::enable_shared_from_this<Edge> {

@@ -53,29 +53,11 @@ shared_ptr<Node> Node::generateNeighbor(const shared_ptr<Cell> &n, std::ofstream
 
 	if (delta_X && !delta_Y) neighbor->direction = Direction::HOR;
 	else if (!delta_X && delta_Y) neighbor->direction = Direction::VER;
-	else { cout << "wtf"; neighbor->direction = Direction::O; }
+	else { cout << "this is not suppose to happen"; neighbor->direction = Direction::O; }
 
 	neighbor->turn = turn + int(neighbor->direction != direction);
 
 	return std::move(neighbor);
-}
-
-void outputTemporaryPath(const vector<Point> path) {
-	cout << ":\n";
-	for (int i = 0; i < path.size(); ++i) {
-		cout << path[i].x << "," << path[i].y << "\n";
-	}
-	// cout << path[i].x << "," << path[i].y << "," << path[i + 1].x << "," << path[i + 1].y << "\n";
-	return;
-}
-
-void Node::outputTemporaryPath() {
-	cout << "(" << cell->node.x << "," << cell->node.y << ")\n";
-	shared_ptr<const Node> thisNode = this->parent;
-	while (thisNode) {
-		cout << "(" << thisNode->cell->node.x << "," << thisNode->cell->node.y << ")\n";
-		thisNode = thisNode->parent;
-	}
 }
 
 shared_ptr<Node> findSmallestFValueNode(const set<shared_ptr<Node>> &open) {
