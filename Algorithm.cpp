@@ -9,8 +9,6 @@
 
 using std::abs;
 
-const bool Log = 0;
-
 bool Node::operator <(const Node &other) const {
 	// future add if has mt, have higher priority
 	if (f_value != other.f_value) return f_value < other.f_value;

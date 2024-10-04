@@ -112,8 +112,6 @@ def plot_data(is_zzb, is_zzm, is_zzn, is_zzp):
 	plt.tight_layout()
 	plt.show()
 
-# 使用示例
+# 使用示例，四個boolean分別代表
+# 輸出blocks, 輸出ports, 輸出net(s), 輸出cells
 plot_data(0,1,1,1)
-
-# 如果您想保存圖表，可以取消註釋下面的行：
-plt.savefig('case02_100_pa.png', dpi=300, bbox_inches='tight')

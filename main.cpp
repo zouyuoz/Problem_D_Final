@@ -118,6 +118,7 @@ void outputRPT(Net net, int CASE) {
 }
 
 int main(int argc, char* argv[]) {
+	// change your test case here (0~6)
 	int testCase = 0;
 
 	Chip chip(testCase);
@@ -128,53 +129,58 @@ int main(int argc, char* argv[]) {
 	chip.initializeAllCell(net);
 
 	A_star_algorithm algorithm(chip, tracks_um);
-	int findNet = 1599; // 1014 1016
+
+	// below are variables to show what type of net are found
+	// also if you want to find specific net, you can also change "findNet" here
+	int findNet = -1; // 1014 1016
 	int count = 0;
 	int countNor = 0; // 640, 49 quite long
 	int countMTs = 0; // 269, 1453
 	int countRXs = 0; // 363, max:1539
-	// 987???
+	int notFound = 0;
 	int totalAmount = net.totalNets.size();
-	set<int> forbiddens; // 755, 182 have problem
 
-	outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
-	outputCell("zzp.csv", chip.allCells);
+	// these two functions will output every chip informations
+	// including blocks, nets, edges, cells to .csv files
+	// for visualizing the chip top
+	// if you need visualing chip top, just set the boolean to true
+	bool visualizeChip = 0;
+	if (visualizeChip) {
+		outputToCSV("zzb.csv", "zzm.csv", "zzn.csv", chip, net, findNet);
+		outputCell("zzp.csv", chip.allCells);
+	}
+
 	// refresh rpt file
 	std::ofstream rpt("case0" + std::to_string(testCase) + "_net.rpt");
 
 	for (Net &n : net.totalNets) {
-		// if (n.ID < findNet) continue;
+		if (findNet != -1 && n.ID < findNet) continue;
+		// or you can change any condition of nets
+		// to determine what nets to be routed
+
 		if (n.orderedMTs.size()) ++countMTs;
 		else if (n.RXs.size() > 1) ++countRXs;
 		else ++countNor;
 
-		// // if (n.bBoxArea()) continue;
-		// if (n.RXs.size() <6) continue;
-		// if (n.RXs.size() >8) continue;
-		// if (!n.orderedMTs.size()) continue;
-
 		++count;
 		cout << n.ID << ": size: " << n.RXs.size() + n.orderedMTs.size();
 		cout << ", bBox: " << n.bBoxArea() << " (" << count << "/" << totalAmount << ")\n";
-		// continue;
+
 		auto PATH = algorithm.getPath(n);
-		if (!PATH.size()) forbiddens.insert(n.ID);
-		// outputNet(PATH);
+		if (!PATH.size()) ++notFound;
 		outputRPT(n, testCase);
-		if (n.ID >= findNet) break;
-		// if (countMTs && countRXs && countNor) break;
+		if (visualizeChip) outputNet(PATH);
+
+		if (findNet != -1 && n.ID >= findNet) break;
 	}
 
-	cout << "Done search.\nForbiddens:\n";
-	for (const int &f: forbiddens) cout << f << ", ";
-	cout << "\b\b\n";
-
+	cout << "Done search.\n";
 	cout << "normal: " << countNor;
 	cout << "\nMTs: " << countMTs;
 	cout << "\nRXs: " << countRXs;
-	cout << "\nwantFind: " << totalAmount;
+	cout << "\nnot found: " << notFound;
 
-	int pathFoundNum = count - forbiddens.size();
+	int pathFoundNum = count - notFound;
 	cout << "\nPath found: " << pathFoundNum << " / " << count << "\n";
 	cout << "Found rate: " << std::fixed << std::setprecision(2);
 	cout << (float)pathFoundNum * 100 / count << "%";
