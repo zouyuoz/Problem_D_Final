@@ -27,20 +27,20 @@ cd "User\Downloads\Problem_D_Final" ; if ($?) { g++ main.cpp Algorithm.cpp Cell.
 
 ### 2. 輸出
 
-針對每個case，會輸出相對應的檔案 `caseXX_net.rpt`，為正式輸出格式，可使用此檔案作為後續的evaluation。
+針對每個case，會輸出相對應的檔案 `caseXX_net.rpt`，為正式輸出格式，可使用此檔案作為後續的 evaluation。
 
 ### 3. 視覺化 chip top
 
-如果在 `main` 函數中執行了 chip top 的visualization（將 `visualizeChip` 設為 `true`），相關數據會被寫入多個 CSV 文件中。
+如果在 `main` 函數中執行了 chip top 的 visualization（將 `visualizeChip` 設為 `true`），相關數據會被寫入多個 CSV 文件中。
 
 #### 視覺化步驟：
-1. 確保已安裝所需的 Python 庫：
+1. 確保已安裝所需的 Python 函式庫：
    - pandas
    - matplotlib
 
 2. 打開 `draw.py` 文件。
 
-3. 在文件最後的 `plot_data` 函數中，選擇要輸出的數據類型並修改相應的布爾值。
+3. 在文件最後的 `plot_data` 函數中，選擇要輸出的數據類型並修改相應的 boolean 值。
 
 4. 執行 `draw.py`，稍等片刻後即可看到生成的圖表。
 
